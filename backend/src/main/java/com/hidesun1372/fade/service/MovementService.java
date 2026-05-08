@@ -1,18 +1,19 @@
 package com.hidesun1372.fade.service;
 
-import org.springframework.*;
+import org.springframework.stereotype.Service;
 
+@Service
 public class MovementService {
-    private int getNextRoom(int roomID, String Direction, boolean hasKey) {
+    public int getNextRoom(int roomID, String direction, boolean hasKey) {
         return switch (roomID) {
             case 0 -> {
-                if (Direction.equals("NORTH")) yield 1;
+                if (direction.equals("NORTH")) yield 1;
                 else yield 0;
             }
             case 1 -> {
-                if (Direction.equals("SOUTH")) yield 2;
-                else if (Direction.equals("WEST")) yield 0;
-                else if (Direction.equals("EAST") && (hasKey)) yield 3;
+                if (direction.equals("SOUTH")) yield 2;
+                else if (direction.equals("WEST")) yield 0;
+                else if (direction.equals("EAST") && (hasKey)) yield 3;
                 else yield 1;
             }
             default -> roomID;
