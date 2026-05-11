@@ -1,16 +1,17 @@
 import  {useEffect, useState} from 'react'
 import './App.css'
+import type { Directions } from './types';
 
 
 function App() {
     const [visibleChars, setVisibleChars] = useState(0);
     const [roomID, setRoomID] = useState(0);
-    const [hasKey, setHasKey] = useState(false);
+    const [requirementsMet, setRequirementsMet] = useState(false);
     const [currentLine, setCurrentLine] = useState(0);
     const [xHeld, setXHeld] = useState(false);
     const [cHeld, setCHeld] = useState(false);
 
-    const allDialogue = {
+    const allDialogue: Record<number, string[]> = {
         0: ["Hello there, fellow player.", "You are fading away.", "I know it sounds crazy, but you have to trust me.", "I will be your guide on your new adventure.", "I will reveal more information as you continue on your journey."],
         1: ["Welcome to the new world!", "In this world, don't trust anyone! Or else they will come back and betray you!", "Now you might be wondering, why trust me? I am your only trusted tour guide on this adventure.", "Here, it is kill or be killed. No one cares about your feelings.", "So you have to gain the upper hand in this world! Don't seem weak!", "Be careful to watch your fading progress bar on the top right, it will tell you how long you have before you will fully fade away."],
         2: ['This place is called "The Haunted Fields". Be careful! As beautiful as the grass may seem, they are dangerous.', "Make sure you are not excessively coming into contact with them. They get aggressive once in a while.", "If you get tired, do not loiter out in the open! Sometimes, the clouds above gets angry if you are just staying in one spot.", "If you do wish to rest, you can do so under a tree where the clouds does not have a vision of you.", "That's basically all you have to know about The Haunted Fields. Stay safe, I'm on your side."],
@@ -21,20 +22,36 @@ function App() {
         7: ["You shall not escape my journey to rule over this land.", "Stop trying, it's futile.", "Did you hear me? I am now the strongest being here! Fighting me is pointless! You'll always lose, over and over again.", "Once I defeat you, I shall now be the one pulling the strings!", "So if you give up now, I'll still let you be my right-hand man for helping me achieve this position!"]
     }
 
-    const rooms = {
-        0: {description: "This is a dream. Is it? Why do you see someone coming towards you? Is someone there?"},
-        1: {description: "Whoa, what is this new world? Guess the odd figure really meant what he meant!"},
-        2: {description: "The grassy plains seems to emit a sense of black and white, even though they are supposed to be green."},
-        3: {description: "After exiting out of the grassy plains, you arrive at a volcanic mountain. You fade some more."},
-        4: {description: "As you continue walking through the volcanic wastelands, you begin to feel a sense that someone is watching you."},
-        5: {description: "After defeating the great boss of the volcanic wastelands, you take a break under the shade of a seemingly misplaced tree."},
-        6: {description: "You enter a dungeon to face off against the ruler of this realm and find the final treasure of this mysterious land."},
-        7: {description: "What a plot twist. This is it. The final battle of this realm. Are you going to fail or are you going to come out on top after all the efforts you took to get here?"}
+    const rooms: Record<number, { description: string; progressDirection: string } >= {
+        0: {description: "This is a dream. Is it? Why do you see someone coming towards you? Is someone there?",
+            progressDirection: "NORTH"
+        },
+        1: {description: "Whoa, what is this new world? Guess the odd figure really meant what he meant!",
+            progressDirection: "EAST"
+        },
+        2: {description: "The grassy plains seems to emit a sense of black and white, even though they are supposed to be green.",
+            progressDirection: "SOUTH"
+        },
+        3: {description: "After exiting out of the grassy plains, you arrive at a volcanic mountain. You fade some more.",
+            progressDirection: "WEST"
+        },
+        4: {description: "As you continue walking through the volcanic wastelands, you begin to feel a sense that someone is watching you.",
+            progressDirection: "SOUTH"
+        },
+        5: {description: "After defeating the great boss of the volcanic wastelands, you take a break under the shade of a seemingly misplaced tree.",
+            progressDirection: "WEST"
+        },
+        6: {description: "You enter a dungeon to face off against the ruler of this realm and find the final treasure of this mysterious land.",
+            progressDirection: "NORTH"
+        },
+        7: {description: "What a plot twist. This is it. The final battle of this realm. Are you going to fail or are you going to come out on top after all the efforts you took to get here?",
+            progressDirection: "EAST"
+        }
     }
 
 
     const handleMove = async (direction: Directions) => {
-        const data = {roomID, direction, hasKey};
+        const data = {roomID, direction, requirementsMet};
         const response = await fetch ("http://localhost:8080/api/move", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
@@ -128,6 +145,8 @@ function App() {
             <p>{allDialogue[roomID][currentLine].substring(0, visibleChars)}</p>
             <button onClick={() => handleMove("NORTH")}>Go North</button>
             <button onClick={() => handleMove("SOUTH")}>Go South</button>
+            <button onClick={() => handleMove("EAST")}>Go East</button>
+            <button onClick={() => handleMove("WEST")}>Go West</button>
             <p>{rooms[roomID].description}</p>
         </div>
     )
