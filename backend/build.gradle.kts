@@ -17,6 +17,10 @@ repositories {
 	mavenCentral()
 }
 
+springBoot {
+	mainClass = "com.hidesun1372.fade.FadeApplication"
+}
+
 dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webmvc")
 	implementation ("org.springframework.boot:spring-boot-starter")
