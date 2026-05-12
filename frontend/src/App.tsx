@@ -6,10 +6,12 @@ import type { Directions } from './types';
 function App() {
     const [visibleChars, setVisibleChars] = useState(0);
     const [roomID, setRoomID] = useState(0);
-    const [requirementsMet, setRequirementsMet] = useState(false);
+    const [clearedRooms, setClearedRooms] = useState(new Set());
+    const requirementsMet = clearedRooms.has(roomID);
     const [currentLine, setCurrentLine] = useState(0);
     const [xHeld, setXHeld] = useState(false);
     const [cHeld, setCHeld] = useState(false);
+    const requirementRooms = new Set ([11])
 
     const allDialogue: Record<number, string[]> = {
         0: ["Hello there, fellow player.", "You are fading away.", "I know it sounds crazy, but you have to trust me.", "I will be your guide on your new adventure.", "I will reveal more information as you continue on your journey."],
@@ -19,38 +21,43 @@ function App() {
         4: ["What? You feel like someone is watching us?", "To be honest? Me too! We really need to investigate this!", "But we need to continue walking.", "I feel like we are really close to the treasure that we are going to find!", "Let's go! Final stretch!"],
         5: ["Woo! The boss was tough!", "But we need not loiter! This is what you've been trying to achieve all along, right?", "To find the ultimate treasure of this universe?", "Heh, are you saying you don't want to continue anymore?", "Hey! Let's stop joking! Here's the dungeon! The King of this realm should be in there!"],
         6: ["Wow, he sure looks menacing! Suitable for the king!", "Anyways, I know his true weakness! He hates water.", "That means if you countlessly attack him with water, he'll have no escape!", "Did you hear the tip? I gave you a new option to get water and splash water.", "Let's defeat him!"],
-        7: ["You shall not escape my journey to rule over this land.", "Stop trying, it's futile.", "Did you hear me? I am now the strongest being here! Fighting me is pointless! You'll always lose, over and over again.", "Once I defeat you, I shall now be the one pulling the strings!", "So if you give up now, I'll still let you be my right-hand man for helping me achieve this position!"]
+        7: ["You shall not escape my journey to rule over this land.", "Stop trying, it's futile.", "Did you hear me? I am now the strongest being here! Fighting me is pointless! You'll always lose, over and over again.", "Once I defeat you, I shall now be the one pulling the strings!", "So if you give up now, I'll still let you be my right-hand man for helping me achieve this position!"],
+        11: ["Congratulations! You're starting to get it!", "Although, puzzles later on will get harder, so prepare for those!"]
     }
 
-    const rooms: Record<number, { description: string; progressDirection: string } >= {
+    const rooms: Record<number, { description: string; progressDirection: string; parentRoom: number|null } >= {
         0: {description: "This is a dream. Is it? Why do you see someone coming towards you? Is someone there?",
-            progressDirection: "NORTH"
-        },
+            progressDirection: "NORTH",
+            parentRoom: null},
         1: {description: "Whoa, what is this new world? Guess the odd figure really meant what he meant!",
-            progressDirection: "EAST"
-        },
+            progressDirection: "EAST",
+            parentRoom: null},
         2: {description: "The grassy plains seems to emit a sense of black and white, even though they are supposed to be green.",
-            progressDirection: "SOUTH"
-        },
+            progressDirection: "SOUTH",
+            parentRoom: null},
         3: {description: "After exiting out of the grassy plains, you arrive at a volcanic mountain. You fade some more.",
-            progressDirection: "WEST"
-        },
+            progressDirection: "WEST",
+            parentRoom: null},
         4: {description: "As you continue walking through the volcanic wastelands, you begin to feel a sense that someone is watching you.",
-            progressDirection: "SOUTH"
-        },
+            progressDirection: "NORTH",
+            parentRoom: null},
         5: {description: "After defeating the great boss of the volcanic wastelands, you take a break under the shade of a seemingly misplaced tree.",
-            progressDirection: "WEST"
-        },
+            progressDirection: "WEST",
+            parentRoom: null},
         6: {description: "You enter a dungeon to face off against the ruler of this realm and find the final treasure of this mysterious land.",
-            progressDirection: "NORTH"
-        },
+            progressDirection: "SOUTH",
+            parentRoom: null},
         7: {description: "What a plot twist. This is it. The final battle of this realm. Are you going to fail or are you going to come out on top after all the efforts you took to get here?",
-            progressDirection: "EAST"
-        }
+            progressDirection: "EAST",
+            parentRoom: null},
+        11: {description: "Woah! There's a key here!",
+            progressDirection: "WEST",
+            parentRoom: 0}
     }
 
 
     const handleMove = async (direction: Directions) => {
+        console.log("Current clearedRooms: ", clearedRooms)
         const data = {roomID, direction, requirementsMet};
         const response = await fetch ("http://localhost:8080/api/move", {
             method: "POST",
@@ -62,22 +69,29 @@ function App() {
         if (nextRoom === roomID) {
             return;
         }
-        else{
+        else {
+            if (requirementRooms.has(nextRoom)) {
+                setClearedRooms(prev => new Set([...prev, rooms[nextRoom].parentRoom]));
+            }
             setRoomID(nextRoom)
             setCurrentLine(0);
             setVisibleChars(0);
+
         }
     };
 
     useEffect(() => {
         if (cHeld) {
             const interval = setInterval(() => {
-                if (currentLine < allDialogue[roomID].length - 1) {
-                    setCurrentLine(prev => {
-                        setVisibleChars(allDialogue[roomID][currentLine + 1].length)
-                        return prev + 1
-                    });
-                }
+                setCurrentLine(prev => {
+                    if (currentLine < allDialogue[roomID].length - 1) {
+                        setVisibleChars(allDialogue[roomID][prev + 1].length)
+                        return prev + 1;
+                    } else {
+                        setVisibleChars(allDialogue[roomID][prev].length)
+                        return prev;
+                    }
+                });
             }, 20);
 
             return () => clearInterval(interval);
