@@ -1,6 +1,7 @@
 import  {useEffect, useState} from 'react'
 import './App.css'
 import type { Directions } from './types';
+import Battle from './Battle'
 
 
 function App() {
@@ -11,7 +12,8 @@ function App() {
     const [currentLine, setCurrentLine] = useState(0);
     const [xHeld, setXHeld] = useState(false);
     const [cHeld, setCHeld] = useState(false);
-    const requirementRooms = new Set ([11])
+    const requirementRooms = new Set ([11]);
+    const [isBattling, setIsBattling] = useState(false);
 
     const allDialogue: Record<number, string[]> = {
         0: ["Hello there, fellow player.", "You are fading away.", "I know it sounds crazy, but you have to trust me.", "I will be your guide on your new adventure.", "I will reveal more information as you continue on your journey."],
@@ -154,15 +156,19 @@ function App() {
     }, [currentLine, visibleChars, allDialogue[roomID]]);
 
 
-    return (
-        <div>
-            <p>{allDialogue[roomID][currentLine].substring(0, visibleChars)}</p>
-            <button onClick={() => handleMove("NORTH")}>Go North</button>
-            <button onClick={() => handleMove("SOUTH")}>Go South</button>
-            <button onClick={() => handleMove("EAST")}>Go East</button>
-            <button onClick={() => handleMove("WEST")}>Go West</button>
-            <p>{rooms[roomID].description}</p>
-        </div>
-    )
+    if(isBattling) {
+        return <Battle />
+    } else {
+        return (
+            <div>
+                <p>{allDialogue[roomID][currentLine].substring(0, visibleChars)}</p>
+                <button onClick={() => handleMove("NORTH")}>Go North</button>
+                <button onClick={() => handleMove("SOUTH")}>Go South</button>
+                <button onClick={() => handleMove("EAST")}>Go East</button>
+                <button onClick={() => handleMove("WEST")}>Go West</button>
+                <p>{rooms[roomID].description}</p>
+            </div>
+        )
+    }
 }
 export default App
