@@ -33,7 +33,7 @@ public class MovementService {
                 else yield 4;
             }
             case 5 -> {
-                if (direction.equals("WEST")) yield 4;
+                if (direction.equals("WEST")) yield 6;
                 else if (direction.equals("SOUTH")) yield 4;
                 else yield 5;
             }

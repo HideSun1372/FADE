@@ -61,7 +61,7 @@ function App() {
     const handleMove = async (direction: Directions) => {
         console.log("Current clearedRooms: ", clearedRooms)
         const data = {roomID, direction, requirementsMet};
-        const response = await fetch ("http://localhost:8080/api/move", {
+        const response = await fetch ("http://10.145.65.9:8080/api/move", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
@@ -121,6 +121,9 @@ function App() {
                 setXHeld(true);
             }
             else if (event.key.toLowerCase() === "z") {
+                if(roomID === 6 && currentLine === allDialogue[6].length - 1 && visibleChars >= allDialogue[6][currentLine].length) {
+                    setIsBattling(true)
+                }
                 if (currentLine < allDialogue[roomID].length - 1) {
                     if (xHeld && visibleChars >= allDialogue[roomID][currentLine].length) {
                         setCurrentLine(currentLine + 1)
