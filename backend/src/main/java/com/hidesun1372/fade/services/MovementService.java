@@ -1,4 +1,4 @@
-package com.hidesun1372.fade.service;
+package com.hidesun1372.fade.services;
 
 import org.springframework.stereotype.Service;
 

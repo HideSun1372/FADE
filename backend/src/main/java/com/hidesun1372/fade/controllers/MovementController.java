@@ -1,4 +1,4 @@
-package com.hidesun1372.fade;
+package com.hidesun1372.fade.controllers;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.CrossOrigin;
@@ -6,7 +6,8 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.hidesun1372.fade.service.MovementService;
+import com.hidesun1372.fade.MoveRequest;
+import com.hidesun1372.fade.services.MovementService;
 
 @CrossOrigin
 @RestController
@@ -16,7 +17,6 @@ public class MovementController {
 
     @PostMapping("/api/move")
     public int movePlayer(@RequestBody MoveRequest request) {
-
         return MovementService.getNextRoom(request.roomID, request.direction, request.requirementsMet);
     }
 }

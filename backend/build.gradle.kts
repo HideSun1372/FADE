@@ -18,7 +18,7 @@ repositories {
 }
 
 springBoot {
-	mainClass = "com.hidesun1372.fade.FadeApplication"
+	mainClass = "com.hidesun1372.fade.FADEApplication"
 }
 
 dependencies {

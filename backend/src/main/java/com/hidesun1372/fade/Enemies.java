@@ -7,6 +7,7 @@ public class Enemies {
     public String name;
     public int health;
     public double damage;
+    public int EnemyID;
 
     public Enemies(String name, int health, double damage) {
         this.name = name;
