@@ -8,8 +8,8 @@ import com.hidesun1372.fade.Enemies;
 public class EnemiesService {
     public Enemies getEnemy(int EnemyID) {
         return switch(EnemyID) {
-            case 1 -> new Enemies("The King", 300, 30.0);  
-            case 2 -> new Enemies("VoidBringer", 50, 5.0);
+            case 0 -> new Enemies("The King", 300, 30.0);  
+            case 1 -> new Enemies("VoidBringer", 50, 5.0);
             default -> null;
         };
     }

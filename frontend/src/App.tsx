@@ -59,9 +59,8 @@ function App() {
 
 
     const handleMove = async (direction: Directions) => {
-        console.log("Current clearedRooms: ", clearedRooms)
         const data = {roomID, direction, requirementsMet};
-        const response = await fetch ("http://10.145.65.9:8080/api/move", {
+        const response = await fetch ("http://localhost:8080/api/move", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
             body: JSON.stringify(data)
@@ -86,6 +85,10 @@ function App() {
         if (cHeld) {
             const interval = setInterval(() => {
                 setCurrentLine(prev => {
+                    if(roomID === 6 && currentLine === allDialogue[6].length - 1 && visibleChars >= allDialogue[6][currentLine].length) {
+                        setIsBattling(true);
+                        return prev;
+                    }
                     if (currentLine < allDialogue[roomID].length - 1) {
                         setVisibleChars(allDialogue[roomID][prev + 1].length)
                         return prev + 1;
