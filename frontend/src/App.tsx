@@ -11,7 +11,7 @@ function App() {
     const [roomID, setRoomID] = useState(0);
     const [clearedRooms, setClearedRooms] = useState(new Set<number>());
     const [currentLine, setCurrentLine] = useState(0);
-    const requirementRooms = new Set([22, 41, 62, 63]); // 11 removed: key is picked up manually now
+    const requirementRooms = new Set([22, 41, 62, 63]);
     const [isBattling, setIsBattling] = useState(false);
     const [visited, setVisited] = useState(new Set<number>([0]));
     const battleRooms = new Set([4, 6, 22, 32, 33, 41, 63, 7, 73]);
@@ -26,13 +26,10 @@ function App() {
     const [dialogueDismissed, setDialogueDismissed] = useState(false);
     const [hasKey, setHasKey] = useState(false);
     const [northDoorUnlocked, setNorthDoorUnlocked] = useState(false);
-    // Temporary messages (locked door, key pickup) that overlay normal dialogue
     const [tempDialogue, setTempDialogue] = useState<string[] | null>(null);
 
-    // Room 0 north door uses northDoorUnlocked; all other rooms use clearedRooms
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
-    // Refs for the game loop (avoid stale closures in rAF callback)
     const keysHeldRef = useRef(new Set<string>());
     const playerXRef = useRef(50);
     const playerYRef = useRef(50);
@@ -43,7 +40,6 @@ function App() {
     const northDoorUnlockedRef = useRef(false);
     const roomIDRef = useRef(0);
 
-    // Keep refs in sync with state on every render
     hasKeyRef.current = hasKey;
     northDoorUnlockedRef.current = northDoorUnlocked;
     roomIDRef.current = roomID;
@@ -133,14 +129,11 @@ function App() {
         SOUTH: { x: 50, y: 12 },
     };
 
-    // tempDialogue takes over from the room's normal dialogue when active
     const activeDialogue = tempDialogue ?? allDialogue[roomID];
 
-    // Dialogue is only "complete" when the player explicitly dismisses it with Z
     const isDialogueComplete = dialogueDismissed;
     isDialogueCompleteRef.current = dialogueDismissed;
 
-    // Rebuild transition function when room state changes so it always closes over fresh values
     useEffect(() => {
         triggerRoomTransitionRef.current = async (direction: Directions) => {
             if (isRoomTransitioningRef.current) return;
@@ -148,7 +141,6 @@ function App() {
 
             isRoomTransitioningRef.current = true;
 
-            // Handle room 0's locked north door locally, without a backend call
             if (roomID === 0 && direction === 'NORTH' && !northDoorUnlockedRef.current) {
                 if (!hasKeyRef.current) {
                     setTempDialogue(["You need a key to unlock this door."]);
@@ -231,7 +223,6 @@ function App() {
         };
     }, [roomID, requirementsMet, visited]);
 
-    // requestAnimationFrame game loop — empty deps so it never restarts
     useEffect(() => {
         let animFrameId: number;
 
@@ -274,14 +265,12 @@ function App() {
         return () => cancelAnimationFrame(animFrameId);
     }, []);
 
-    // Start battle once dialogue finishes in a battle room
     useEffect(() => {
         if (isDialogueComplete && battleRooms.has(roomID) && !battlesWon.has(roomID)) {
             setIsBattling(true);
         }
     }, [isDialogueComplete, roomID, battlesWon]);
 
-    // C held — auto-advance through dialogue
     useEffect(() => {
         if (cHeld) {
             const interval = setInterval(() => {
@@ -299,7 +288,6 @@ function App() {
         }
     }, [cHeld, roomID, tempDialogue]);
 
-    // Typewriter — restarts when line or dialogue source changes
     useEffect(() => {
         const interval = setInterval(() => {
             setVisibleChars(prev => {
@@ -313,7 +301,6 @@ function App() {
         return () => clearInterval(interval);
     }, [currentLine, roomID, tempDialogue]);
 
-    // Keyboard input
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
@@ -328,7 +315,6 @@ function App() {
                 setXHeld(true);
             } else if (key === 'z') {
                 if (dialogueDismissed) {
-                    // No dialogue showing — Z is the interaction key
                     if (roomID === 11 && !hasKeyRef.current) {
                         const kdx = playerXRef.current - 50;
                         const kdy = playerYRef.current - 50;
@@ -343,9 +329,8 @@ function App() {
                     }
                     return;
                 }
-                // Dialogue is showing — Z advances it (no text skip)
                 if (visibleChars < activeDialogue[currentLine].length) {
-                    return; // Text still typing, Z does nothing
+                    return;
                 }
                 if (currentLine < activeDialogue.length - 1) {
                     if (xHeld) {
