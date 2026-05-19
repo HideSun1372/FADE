@@ -3,18 +3,62 @@ import './App.css'
 import type { Directions } from './types';
 import Battle from './Battle'
 import GameScene from './GameScene'
+import TitleScreen from './TitleScreen'
 
 const SPEED = 0.45;
+const ENEMY_SPEED = 0.3;
+const AGGRO_RADIUS = 22;
+const BATTLE_TRIGGER_DIST = 4;
+
+const battleRooms = new Set([4, 6, 22, 32, 33, 41, 63, 7, 73]);
+const requirementRooms = new Set([22, 41, 62, 63]);
+
+const roomDoors: Record<number, Set<Directions>> = {
+    0:  new Set(['EAST', 'NORTH']),
+    1:  new Set(['SOUTH', 'NORTH', 'EAST']),
+    2:  new Set(['WEST', 'NORTH', 'SOUTH']),
+    3:  new Set(['NORTH', 'SOUTH', 'WEST']),
+    4:  new Set(['NORTH', 'EAST']),
+    5:  new Set(['SOUTH', 'EAST', 'WEST']),
+    6:  new Set(['SOUTH', 'WEST']),
+    7:  new Set(['EAST']),
+    11: new Set(['WEST']),
+    21: new Set(['SOUTH', 'WEST']),
+    22: new Set(['EAST']),
+    31: new Set(['SOUTH', 'EAST', 'WEST']),
+    32: new Set(['WEST']),
+    33: new Set(['EAST']),
+    41: new Set(['NORTH']),
+    61: new Set(['WEST', 'SOUTH']),
+    62: new Set(['EAST', 'NORTH']),
+    63: new Set(['WEST']),
+    71: new Set(['EAST', 'NORTH']),
+    72: new Set(['SOUTH', 'WEST', 'NORTH', 'EAST']),
+    73: new Set(['EAST']),
+    74: new Set(['SOUTH', 'NORTH']),
+    75: new Set(['WEST', 'SOUTH', 'NORTH']),
+};
+
+
+const enemySpawnPositions: Record<number, { x: number; y: number }> = {
+    4:  { x: 50, y: 25 },
+    6:  { x: 50, y: 25 },
+    7:  { x: 50, y: 25 },
+    22: { x: 50, y: 50 },
+    32: { x: 50, y: 50 },
+    33: { x: 50, y: 50 },
+    41: { x: 50, y: 75 },
+    63: { x: 50, y: 25 },
+    73: { x: 50, y: 50 },
+};
 
 function App() {
     const [visibleChars, setVisibleChars] = useState(0);
     const [roomID, setRoomID] = useState(0);
     const [clearedRooms, setClearedRooms] = useState(new Set<number>());
     const [currentLine, setCurrentLine] = useState(0);
-    const requirementRooms = new Set([22, 41, 62, 63]);
     const [isBattling, setIsBattling] = useState(false);
     const [visited, setVisited] = useState(new Set<number>([0]));
-    const battleRooms = new Set([4, 6, 22, 32, 33, 41, 63, 7, 73]);
     const [battlesWon, setBattlesWon] = useState(new Set<number>());
     const [fadePercent, setFadePercent] = useState(100);
     const [waterAmount, setWaterAmount] = useState(0);
@@ -25,8 +69,19 @@ function App() {
     const [cHeld, setCHeld] = useState(false);
     const [dialogueDismissed, setDialogueDismissed] = useState(false);
     const [hasKey, setHasKey] = useState(false);
+    const [hasRoom62Key, setHasRoom62Key] = useState(false);
     const [northDoorUnlocked, setNorthDoorUnlocked] = useState(false);
     const [tempDialogue, setTempDialogue] = useState<string[] | null>(null);
+    const [enemyX, setEnemyX] = useState(50);
+    const [enemyY, setEnemyY] = useState(50);
+    const [enemyAggravated, setEnemyAggravated] = useState(false);
+    const [saveMenuOpen, setSaveMenuOpen] = useState(false);
+    const [saveConfirm, setSaveConfirm] = useState(false);
+    const [hasFaded, setHasFaded] = useState(false);
+    const [showEnding, setShowEnding] = useState(false);
+    const [phase, setPhase] = useState<'loading' | 'title' | 'game'>('loading');
+    const [activeSlot, setActiveSlot] = useState(1);
+    const [saveSlots, setSaveSlots] = useState<any[]>([]);
 
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
@@ -39,10 +94,35 @@ function App() {
     const hasKeyRef = useRef(false);
     const northDoorUnlockedRef = useRef(false);
     const roomIDRef = useRef(0);
+    const room22PostBattleShownRef = useRef(false);
+    const enemyXRef = useRef(50);
+    const enemyYRef = useRef(50);
+    const enemyAggravatedRef = useRef(false);
+    const battlesWonRef = useRef(new Set<number>());
+    const isBattlingRef = useRef(false);
+    const clearedRoomsRef = useRef(new Set<number>());
+    const room5WestUnlockShownRef = useRef(false);
+    const room4PostBattleShownRef = useRef(false);
+    const room6PostBattleShownRef = useRef(false);
+    const room7PostBattleShownRef = useRef(false);
+    const saveMenuOpenRef = useRef(false);
+    saveMenuOpenRef.current = saveMenuOpen;
+    const hasFadedRef = useRef(false);
+    hasFadedRef.current = hasFaded;
+    const showEndingRef = useRef(false);
+    showEndingRef.current = showEnding;
+    const phaseRef = useRef<'loading' | 'title' | 'game'>('loading');
+    phaseRef.current = phase;
+    const room62NorthUnlockShownRef = useRef(false);
+    const hasRoom62KeyRef = useRef(false);
 
     hasKeyRef.current = hasKey;
     northDoorUnlockedRef.current = northDoorUnlocked;
     roomIDRef.current = roomID;
+    battlesWonRef.current = battlesWon;
+    isBattlingRef.current = isBattling;
+    clearedRoomsRef.current = clearedRooms;
+    hasRoom62KeyRef.current = hasRoom62Key;
 
     const roomNames: Record<number, string> = {
         0: 'The Void',
@@ -77,8 +157,8 @@ function App() {
         3: ["Woo! Finally got out of there! But here is where your adventures become harder.", "Welcome to the Volcanic Wastelands!", "In contrast to the cool Grasslands, the Volcano will incinerate you if you aren't careful!", "Ready? Let's explore!"],
         4: ["What? You feel like someone is watching us?", "To be honest? Me too! We really need to investigate this!", "But we need to continue walking.", "I feel like we are really close to the treasure that we are going to find!", "Let's go! Final stretch!", "Wait, who's that? Battle?", "Oh no! That's the boss! Prepare for combat!!!"],
         5: ["Woo! The boss was tough!", "But we need not loiter! This is what you've been trying to achieve all along, right?", "To find the ultimate treasure of this universe?", "Heh, are you saying you don't want to continue anymore?", "Hey! Let's stop joking! Here's the dungeon! The King of this realm should be in there!"],
-        6: ["Wow, he sure looks menacing! Suitable for the king!", "Anyways, I know his true weakness! He hates water.", "That means if you countlessly attack him with water, he'll have no escape!", "Conveniently, you just have some water from those previous subrooms.", "Let's defeat him!"],
-        7: ["You shall not escape my journey to rule over this land.", "Stop trying, it's futile.", "Did you hear me? I am now the strongest being here! Fighting me is pointless! You'll always lose, over and over again.", "Once I defeat you, I shall now be the one pulling the strings!", "So if you give up now, I'll still let you be my right-hand man for helping me achieve this position!"],
+        6: ["King: Who have came to disturb my sleep?", "Us, old man! Either let us through, or we'll have to do this the hard way...", "King: Let's do it the hard way then. I spent much time on this kingdom, I'll try my best to defend it.", "Alright, let's go! Final fight!"],
+        7: ["The air feels heavy with betrayal."],
         11: ["Woah, a key! I wonder what that could be for!"],
         21: ["Nothing impressive here, move on."],
         22: ["A goblin? Welp, it's time to meet your first battle, my friend!", "Prepare for combat!!!"],
@@ -129,6 +209,116 @@ function App() {
         SOUTH: { x: 50, y: 12 },
     };
 
+    const loadFromSave = async (slot: number) => {
+        const res = await fetch(`http://localhost:8080/api/save/${slot}`);
+        let roomId = 0, px = 50, py = 50, dir = 'south';
+        let cleared = new Set<number>(), bWon = new Set<number>(), vis = new Set<number>([0]);
+        let hk = false, hk62 = false, ndu = false, water = 0, fade = 100;
+
+        if (res.ok) {
+            const d = await res.json();
+            roomId = d.roomId;
+            px = d.playerX; py = d.playerY; dir = d.playerDirection;
+            const parse = (s: string) => new Set<number>(s ? s.split(',').map(Number).filter((n: number) => !isNaN(n) && n !== 0 || n === 0) : []);
+            cleared = parse(d.clearedRooms);
+            bWon = parse(d.battlesWon);
+            vis = parse(d.visited);
+            hk = d.hasKey; hk62 = d.hasRoom62Key; ndu = d.northDoorUnlocked;
+            water = d.waterAmount; fade = d.fadePercent;
+        }
+
+        setRoomID(roomId); roomIDRef.current = roomId;
+        playerXRef.current = px; setPlayerX(px);
+        playerYRef.current = py; setPlayerY(py);
+        setPlayerDirection(dir);
+        setClearedRooms(cleared); clearedRoomsRef.current = cleared;
+        setBattlesWon(bWon); battlesWonRef.current = bWon;
+        setVisited(vis);
+        setHasKey(hk); hasKeyRef.current = hk;
+        setHasRoom62Key(hk62); hasRoom62KeyRef.current = hk62;
+        setNorthDoorUnlocked(ndu); northDoorUnlockedRef.current = ndu;
+        setWaterAmount(water);
+        setFadePercent(fade);
+        setHasFaded(false);
+        setTempDialogue(null);
+        setIsBattling(false); isBattlingRef.current = false;
+        isRoomTransitioningRef.current = false;
+        setEnemyAggravated(false); enemyAggravatedRef.current = false;
+        const lastLine = (allDialogue[roomId]?.length ?? 1) - 1;
+        setCurrentLine(lastLine);
+        setVisibleChars(allDialogue[roomId]?.[lastLine]?.length ?? 0);
+        setDialogueDismissed(true);
+        isDialogueCompleteRef.current = true;
+        if (battleRooms.has(roomId) && !bWon.has(roomId)) {
+            const spawn = enemySpawnPositions[roomId] ?? { x: 50, y: 50 };
+            enemyXRef.current = spawn.x; enemyYRef.current = spawn.y;
+            setEnemyX(spawn.x); setEnemyY(spawn.y);
+        }
+    };
+
+    const saveGame = async () => {
+        await fetch(`http://localhost:8080/api/save/${activeSlot}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                roomId: roomIDRef.current,
+                playerX: playerXRef.current,
+                playerY: playerYRef.current,
+                playerDirection,
+                clearedRooms: [...clearedRoomsRef.current].join(','),
+                battlesWon: [...battlesWonRef.current].join(','),
+                visited: [...visited].join(','),
+                hasKey: hasKeyRef.current,
+                hasRoom62Key: hasRoom62KeyRef.current,
+                northDoorUnlocked: northDoorUnlockedRef.current,
+                waterAmount,
+                fadePercent,
+            }),
+        });
+        setSaveConfirm(true);
+        setTimeout(() => setSaveConfirm(false), 2000);
+    };
+
+    const handleBattleEnd = (won: boolean) => {
+        setIsBattling(false);
+        isBattlingRef.current = false;
+        if (!won) loadFromSave(activeSlot);
+    };
+
+    const handleNewGame = (slotId: number) => {
+        setSaveMenuOpen(false);
+        setActiveSlot(slotId);
+        setPhase('game');
+    };
+
+    const handleLoadGame = async (slotId: number) => {
+        setSaveMenuOpen(false);
+        setActiveSlot(slotId);
+        await loadFromSave(slotId);
+        setPhase('game');
+    };
+
+    const handleDeleteSave = async (slotId: number) => {
+        await fetch(`http://localhost:8080/api/save/${slotId}`, { method: 'DELETE' });
+        const res = await fetch('http://localhost:8080/api/save');
+        setSaveSlots(res.ok ? await res.json() : []);
+    };
+
+    const handleCopySave = async (fromId: number, toId: number) => {
+        const res = await fetch(`http://localhost:8080/api/save/${fromId}`);
+        if (res.ok) {
+            const data = await res.json();
+            data.id = toId;
+            await fetch(`http://localhost:8080/api/save/${toId}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data),
+            });
+            const listRes = await fetch('http://localhost:8080/api/save');
+            setSaveSlots(listRes.ok ? await listRes.json() : []);
+        }
+    };
+
     const activeDialogue = tempDialogue ?? allDialogue[roomID];
 
     const isDialogueComplete = dialogueDismissed;
@@ -140,6 +330,107 @@ function App() {
             if (!isDialogueCompleteRef.current) return;
 
             isRoomTransitioningRef.current = true;
+
+            if (roomID === 1 && direction === 'EAST' && !requirementsMet) {
+                setTempDialogue(["This door won't budge. There must be something in this area you haven't done yet."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerXRef.current = 85;
+                setPlayerX(85);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 2 && direction === 'SOUTH' && !requirementsMet) {
+                setTempDialogue(["This path is blocked. Explore both forks of the Haunted Fields through the north door first."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerYRef.current = 85;
+                setPlayerY(85);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 3 && direction === 'WEST' && !requirementsMet) {
+                setTempDialogue(["The volcanic pass is sealed. Face the creature lurking in the dark chamber to the south first."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerXRef.current = 15;
+                setPlayerX(15);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 5 && direction === 'WEST' && !requirementsMet) {
+                setTempDialogue(["The west path is sealed. Head east and explore what lies beyond — then come back."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerXRef.current = 15;
+                setPlayerX(15);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (battleRooms.has(roomID) && !battlesWonRef.current.has(roomID)) {
+                const msg = roomID === 73
+                    ? "Ha! Did you really think you could just leave? Defeat the enemy first!"
+                    : "You can't leave until you defeat the enemy!";
+                setTempDialogue([msg]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                if (direction === 'EAST')  { playerXRef.current = 85; setPlayerX(85); }
+                if (direction === 'WEST')  { playerXRef.current = 15; setPlayerX(15); }
+                if (direction === 'NORTH') { playerYRef.current = 15; setPlayerY(15); }
+                if (direction === 'SOUTH') { playerYRef.current = 85; setPlayerY(85); }
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 11 && !hasKeyRef.current) {
+                setTempDialogue(["Pick up the key before you leave!"]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerXRef.current = 15;
+                setPlayerX(15);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 62 && !hasRoom62KeyRef.current) {
+                setTempDialogue(["You should pick up the key before going anywhere."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                if (direction === 'EAST')  { playerXRef.current = 85; setPlayerX(85); }
+                if (direction === 'NORTH') { playerYRef.current = 15; setPlayerY(15); }
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 62 && direction === 'NORTH' && !requirementsMet) {
+                setTempDialogue(["The door is locked tight. Find another way through."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                playerYRef.current = 15;
+                setPlayerY(15);
+                isDialogueCompleteRef.current = false;
+                isRoomTransitioningRef.current = false;
+                return;
+            }
 
             if (roomID === 0 && direction === 'NORTH' && !northDoorUnlockedRef.current) {
                 if (!hasKeyRef.current) {
@@ -156,6 +447,12 @@ function App() {
                 setPlayerY(15);
                 isDialogueCompleteRef.current = false;
                 isRoomTransitioningRef.current = false;
+                return;
+            }
+
+            if (roomID === 7 && direction === 'EAST' && battlesWonRef.current.has(7)) {
+                isRoomTransitioningRef.current = false;
+                setShowEnding(true);
                 return;
             }
 
@@ -182,6 +479,16 @@ function App() {
             setRoomID(nextRoom);
             setFadePercent(prev => Math.max(0, prev - 2));
             setTempDialogue(null);
+
+            if (battleRooms.has(nextRoom) && !battlesWonRef.current.has(nextRoom)) {
+                const spawn = enemySpawnPositions[nextRoom] ?? { x: 50, y: 50 };
+                enemyXRef.current = spawn.x;
+                enemyYRef.current = spawn.y;
+                enemyAggravatedRef.current = false;
+                setEnemyX(spawn.x);
+                setEnemyY(spawn.y);
+                setEnemyAggravated(false);
+            }
 
             const alreadyVisited = visited.has(nextRoom);
 
@@ -219,6 +526,25 @@ function App() {
             setPlayerY(entry.y);
 
             isDialogueCompleteRef.current = alreadyVisited;
+
+            if (nextRoom === 5 && clearedRoomsRef.current.has(5) && !room5WestUnlockShownRef.current) {
+                room5WestUnlockShownRef.current = true;
+                setTempDialogue(["The west path is now open! The water rooms are accessible."]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+
+            if (nextRoom === 62 && clearedRoomsRef.current.has(62) && !room62NorthUnlockShownRef.current) {
+                room62NorthUnlockShownRef.current = true;
+                setTempDialogue(["The north door just unlocked. You can escape now!"]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+
             isRoomTransitioningRef.current = false;
         };
     }, [roomID, requirementsMet, visited]);
@@ -238,23 +564,56 @@ function App() {
 
             if (dir) setPlayerDirection(dir);
 
-            if (!isRoomTransitioningRef.current && isDialogueCompleteRef.current && (dx !== 0 || dy !== 0)) {
+            if (!isRoomTransitioningRef.current && isDialogueCompleteRef.current && !isBattlingRef.current && !saveMenuOpenRef.current && !hasFadedRef.current && !showEndingRef.current && (dx !== 0 || dy !== 0)) {
                 const nx = playerXRef.current + dx;
                 const ny = playerYRef.current + dy;
 
-                if (nx >= 97) {
+                const sceneW = window.innerWidth;
+                const sceneH = window.innerHeight - 75;
+                const doorHalfW = 25 / sceneW * 100;
+                const doorHalfH = 25 / sceneH * 100;
+                const inDoorX = nx >= 50 - doorHalfW && nx <= 50 + doorHalfW;
+                const inDoorY = ny >= 50 - doorHalfH && ny <= 50 + doorHalfH;
+                const doors = roomDoors[roomIDRef.current] ?? new Set<Directions>();
+
+                if (dx > 0 && nx >= 97 && inDoorY && doors.has('EAST')) {
                     triggerRoomTransitionRef.current('EAST');
-                } else if (nx <= 3) {
+                } else if (dx < 0 && nx <= 3 && inDoorY && doors.has('WEST')) {
                     triggerRoomTransitionRef.current('WEST');
-                } else if (ny <= 10) {
+                } else if (dy < 0 && ny <= 10 && inDoorX && doors.has('NORTH')) {
                     triggerRoomTransitionRef.current('NORTH');
-                } else if (ny >= 97) {
+                } else if (dy > 0 && ny >= 97 && inDoorX && doors.has('SOUTH')) {
                     triggerRoomTransitionRef.current('SOUTH');
                 } else {
-                    playerXRef.current = nx;
-                    playerYRef.current = ny;
-                    setPlayerX(nx);
-                    setPlayerY(ny);
+                    playerXRef.current = Math.max(3.1, Math.min(96.9, nx));
+                    playerYRef.current = Math.max(10.1, Math.min(96.9, ny));
+                    setPlayerX(playerXRef.current);
+                    setPlayerY(playerYRef.current);
+                }
+            }
+
+            if (battleRooms.has(roomIDRef.current) && !battlesWonRef.current.has(roomIDRef.current) && isDialogueCompleteRef.current && !isBattlingRef.current && roomIDRef.current !== 6) {
+                const edx = playerXRef.current - enemyXRef.current;
+                const edy = playerYRef.current - enemyYRef.current;
+                const dist = Math.sqrt(edx * edx + edy * edy);
+
+                if (!enemyAggravatedRef.current && dist < AGGRO_RADIUS) {
+                    enemyAggravatedRef.current = true;
+                    setEnemyAggravated(true);
+                }
+
+                if (enemyAggravatedRef.current) {
+                    if (dist < BATTLE_TRIGGER_DIST) {
+                        isBattlingRef.current = true;
+                        setIsBattling(true);
+                    } else {
+                        const enx = enemyXRef.current + (edx / dist) * ENEMY_SPEED;
+                        const eny = enemyYRef.current + (edy / dist) * ENEMY_SPEED;
+                        enemyXRef.current = enx;
+                        enemyYRef.current = eny;
+                        setEnemyX(enx);
+                        setEnemyY(eny);
+                    }
                 }
             }
 
@@ -266,16 +625,107 @@ function App() {
     }, []);
 
     useEffect(() => {
-        if (isDialogueComplete && battleRooms.has(roomID) && !battlesWon.has(roomID)) {
+        if (!isBattling) {
+            const spawn = enemySpawnPositions[roomIDRef.current] ?? { x: 50, y: 50 };
+            enemyXRef.current = spawn.x;
+            enemyYRef.current = spawn.y;
+            enemyAggravatedRef.current = false;
+            setEnemyX(spawn.x);
+            setEnemyY(spawn.y);
+            setEnemyAggravated(false);
+
+            if (battlesWonRef.current.has(22) && !room22PostBattleShownRef.current) {
+                room22PostBattleShownRef.current = true;
+                setTempDialogue([
+                    "The goblin dropped a key.",
+                    "Congratulations! You beat your first enemy!",
+                    "There's more where that came from, so get ready!",
+                ]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+
+            if (battlesWonRef.current.has(4) && roomIDRef.current === 4 && !room4PostBattleShownRef.current) {
+                room4PostBattleShownRef.current = true;
+                setTempDialogue(["The boss is down. The path north is now open!"]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+
+            if (battlesWonRef.current.has(7) && !room7PostBattleShownRef.current) {
+                room7PostBattleShownRef.current = true;
+                setTempDialogue([
+                    "*Cough* You are stronger than I thought after all...",
+                    "I was once just like you, I also had a fading bar.",
+                    "However, once I made a deal with a mysterious salesman, he promised me that in exchange for the fade bar to disappear, I'll have to give my freedom to him.",
+                    "Obviously, I took the deal, and I regretted it.",
+                    "So that's why I used you to help me escape!",
+                    "I don't expect forgiveness.",
+                    "Bye bye, hope you enjoy your freedom.",
+                    "The mysterious figure faded away!",
+                ]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+
+            if (battlesWonRef.current.has(6) && !room6PostBattleShownRef.current) {
+                room6PostBattleShownRef.current = true;
+                setTempDialogue([
+                    "King: It seems that you are stronger than I thought...",
+                    "King: You deserve this win.",
+                    "The king has faded away!",
+                    "Now that old man's gone, I can finally focus on what really mattered...",
+                    "Controlling the kingdom.",
+                    "Hahaha, you think I actually wanted to help you?",
+                    "No! I have just used you as a pawn, in this game.",
+                    "Uee hee hee! Meet me in the next room! If you can...",
+                ]);
+                setCurrentLine(0);
+                setVisibleChars(0);
+                setDialogueDismissed(false);
+                isDialogueCompleteRef.current = false;
+            }
+        }
+    }, [isBattling]);
+
+    useEffect(() => {
+        const checkSaves = async () => {
+            const res = await fetch('http://localhost:8080/api/save');
+            if (!res.ok) { setPhase('game'); return; }
+            const data = await res.json();
+            const saves = Array.isArray(data) ? data : [];
+            if (saves.length === 0) {
+                setPhase('game');
+            } else {
+                setSaveSlots(saves);
+                setPhase('title');
+            }
+        };
+        checkSaves();
+    }, []);
+
+    useEffect(() => {
+        if (fadePercent <= 0) setHasFaded(true);
+    }, [fadePercent]);
+
+    useEffect(() => {
+        if (roomID === 6 && dialogueDismissed && !battlesWon.has(6) && !isBattling) {
+            isBattlingRef.current = true;
             setIsBattling(true);
         }
-    }, [isDialogueComplete, roomID, battlesWon]);
+    }, [dialogueDismissed, roomID, battlesWon, isBattling]);
 
     useEffect(() => {
         if (cHeld) {
             const interval = setInterval(() => {
                 setCurrentLine(prev => {
-                    if (prev < activeDialogue.length - 1) {
+                    if (prev < activeDialogue.length - 1 && activeDialogue[prev + 1]) {
                         setVisibleChars(activeDialogue[prev + 1].length);
                         return prev + 1;
                     } else {
@@ -287,6 +737,27 @@ function App() {
             return () => clearInterval(interval);
         }
     }, [cHeld, roomID, tempDialogue]);
+
+    useEffect(() => {
+        if (!cHeld || dialogueDismissed) return;
+        if (currentLine === activeDialogue.length - 1 && visibleChars >= activeDialogue[currentLine].length) {
+            if (tempDialogue !== null) {
+                setTempDialogue(null);
+                const lastLine = allDialogue[roomID].length - 1;
+                setCurrentLine(lastLine);
+                setVisibleChars(allDialogue[roomID][lastLine].length);
+                setDialogueDismissed(true);
+            } else {
+                setDialogueDismissed(true);
+            }
+        }
+    }, [cHeld, currentLine, visibleChars, dialogueDismissed]);
+
+    useEffect(() => {
+        if (xHeld) {
+            setVisibleChars(activeDialogue[currentLine].length);
+        }
+    }, [xHeld, currentLine]);
 
     useEffect(() => {
         const interval = setInterval(() => {
@@ -303,11 +774,19 @@ function App() {
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
-            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
-                event.preventDefault();
-                keysHeldRef.current.add(event.key);
+            if (phaseRef.current !== 'game') return;
+            if (event.key === 'Escape') {
+                if (!isBattlingRef.current) setSaveMenuOpen(prev => !prev);
                 return;
             }
+
+            if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) {
+                event.preventDefault();
+                if (!isBattlingRef.current) keysHeldRef.current.add(event.key);
+                return;
+            }
+
+            if (isBattlingRef.current) return;
 
             const key = event.key.toLowerCase();
             if (key === 'x') {
@@ -321,6 +800,18 @@ function App() {
                         if (Math.sqrt(kdx * kdx + kdy * kdy) < 5) {
                             hasKeyRef.current = true;
                             setHasKey(true);
+                            setTempDialogue(["You picked up the key!"]);
+                            setCurrentLine(0);
+                            setVisibleChars(0);
+                            setDialogueDismissed(false);
+                        }
+                    }
+                    if (roomID === 62 && !hasRoom62KeyRef.current) {
+                        const kdx = playerXRef.current - 50;
+                        const kdy = playerYRef.current - 50;
+                        if (Math.sqrt(kdx * kdx + kdy * kdy) < 8) {
+                            hasRoom62KeyRef.current = true;
+                            setHasRoom62Key(true);
                             setTempDialogue(["You picked up the key!"]);
                             setCurrentLine(0);
                             setVisibleChars(0);
@@ -368,10 +859,33 @@ function App() {
         };
     }, [currentLine, visibleChars, roomID, xHeld, tempDialogue, dialogueDismissed]);
 
+    const saveSlotsList = Array.isArray(saveSlots) ? saveSlots : [];
+    const slotInfos = [1, 2, 3].map(id => {
+        const save = saveSlotsList.find((s: any) => s.id === id);
+        if (!save) return null;
+        return {
+            id,
+            roomName: roomNames[save.roomId as number] ?? 'Unknown',
+            fadePercent: save.fadePercent as number,
+            visitedCount: save.visited ? (save.visited as string).split(',').filter(Boolean).length : 0,
+        };
+    });
+
+    if (phase === 'loading') return null;
+
+    if (phase === 'title') {
+        return <TitleScreen
+            slots={slotInfos}
+            onNewGame={handleNewGame}
+            onLoadGame={handleLoadGame}
+            onDeleteSave={handleDeleteSave}
+            onCopySave={handleCopySave} />;
+    }
+
     if (isBattling) {
         return <Battle
             roomID={roomID}
-            setIsBattling={setIsBattling}
+            onBattleEnd={handleBattleEnd}
             setBattlesWon={setBattlesWon}
             waterAmount={waterAmount}
             setWaterAmount={setWaterAmount} />;
@@ -396,16 +910,58 @@ function App() {
                 playerX={playerX}
                 playerY={playerY}
                 hasKey={hasKey}
-                northDoorUnlocked={northDoorUnlocked} />
+                hasRoom62Key={hasRoom62Key}
+                northDoorUnlocked={northDoorUnlocked}
+                requirementsMet={requirementsMet}
+                enemyX={enemyX}
+                enemyY={enemyY}
+                enemyAggravated={enemyAggravated}
+                battleWon={battlesWon.has(roomID)}
+                roomVisited={visited.has(roomID)} />
 
             {!isDialogueComplete && (
                 <div className="dialogue-area">
-                    <p className="dialogue-text">{activeDialogue[currentLine].substring(0, visibleChars)}</p>
+                    <p className="dialogue-text">
+                        {activeDialogue[currentLine]?.substring(0, visibleChars)}
+                    </p>
                 </div>
             )}
             <div className="controls-bar">
-                <p className="controls-hint">Z: Next &nbsp;·&nbsp; X: Skip text &nbsp;·&nbsp; C: Auto-advance</p>
+                <p className="controls-hint">Z: Next &nbsp;·&nbsp; X: Skip text &nbsp;·&nbsp; C: Auto-advance &nbsp;·&nbsp; ESC: Save</p>
             </div>
+
+            {hasFaded && (
+                <div className="save-overlay">
+                    <div className="save-menu" style={{ textAlign: 'center' }}>
+                        <p className="save-menu-title">YOU HAVE FADED AWAY</p>
+                        <p className="save-menu-stat" style={{ marginBottom: '24px' }}>Your presence in this world has dissolved.</p>
+                        <button onClick={() => loadFromSave(activeSlot)}>Respawn</button>
+                    </div>
+                </div>
+            )}
+
+            {showEnding && (
+                <div className="ending-overlay">
+                    <p className="ending-text">You win?</p>
+                </div>
+            )}
+
+            {saveMenuOpen && (
+                <div className="save-overlay">
+                    <div className="save-menu">
+                        <p className="save-menu-title">— SAVE —</p>
+                        <p className="save-menu-location">* {roomNames[roomID] ?? 'Unknown'}</p>
+                        <p className="save-menu-stat">FADE &nbsp;&nbsp;{fadePercent}%</p>
+                        <p className="save-menu-stat">ROOMS &nbsp;{visited.size} visited</p>
+                        <div className="save-menu-buttons">
+                            <button onClick={saveGame}>Save</button>
+                            <button onClick={() => setSaveMenuOpen(false)}>Return</button>
+                        </div>
+                        {saveConfirm && <p className="save-confirm">* Game saved.</p>}
+                    </div>
+                </div>
+            )}
+
         </div>
     );
 }

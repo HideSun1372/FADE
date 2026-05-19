@@ -108,6 +108,140 @@ button:hover {
     filter: drop-shadow(0 0 12px gold);
 }
 
+.scene-moon {
+    position: absolute;
+    top: 12%;
+    right: 15%;
+    font-size: 36px;
+    filter: drop-shadow(0 0 10px #c8f0c8);
+    opacity: 0.85;
+}
+
+.scene-skull {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 48px;
+    filter: drop-shadow(0 0 14px #ff4400);
+    opacity: 0.6;
+}
+
+.scene-tree-left {
+    position: absolute;
+    top: 28%;
+    left: 8%;
+    font-size: 52px;
+    filter: drop-shadow(0 0 12px #1e4a1e);
+    opacity: 0.7;
+}
+
+.scene-tree-right {
+    position: absolute;
+    top: 42%;
+    right: 8%;
+    font-size: 52px;
+    filter: drop-shadow(0 0 12px #1e4a1e);
+    opacity: 0.7;
+}
+
+.scene-volcano {
+    position: absolute;
+    top: 12%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 64px;
+    filter: drop-shadow(0 0 24px #ff2200);
+    opacity: 0.7;
+}
+
+.scene-embers {
+    position: absolute;
+    top: 38%;
+    right: 18%;
+    font-size: 32px;
+    filter: drop-shadow(0 0 12px #ff6600);
+    opacity: 0.65;
+}
+
+.scene-fire-left {
+    position: absolute;
+    top: 42%;
+    left: 12%;
+    font-size: 40px;
+    filter: drop-shadow(0 0 16px #ff3300);
+    opacity: 0.75;
+}
+
+.scene-fire-right {
+    position: absolute;
+    top: 32%;
+    right: 12%;
+    font-size: 40px;
+    filter: drop-shadow(0 0 16px #ff3300);
+    opacity: 0.75;
+}
+
+.scene-tree-center {
+    position: absolute;
+    top: 22%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 58px;
+    filter: drop-shadow(0 0 16px #2a7a2a);
+    opacity: 0.85;
+}
+
+.scene-crown {
+    position: absolute;
+    top: 14%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 54px;
+    filter: drop-shadow(0 0 20px #d4af37);
+    opacity: 0.8;
+}
+
+.scene-bucket {
+    position: absolute;
+    top: 48%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 44px;
+    filter: drop-shadow(0 0 14px #2080c8);
+    opacity: 0.75;
+}
+
+.scene-bucket-left {
+    position: absolute;
+    top: 48%;
+    left: 35%;
+    transform: translate(-50%, -50%);
+    font-size: 44px;
+    filter: drop-shadow(0 0 14px #2080c8);
+    opacity: 0.75;
+}
+
+.scene-bucket-right {
+    position: absolute;
+    top: 48%;
+    left: 65%;
+    transform: translate(-50%, -50%);
+    font-size: 44px;
+    filter: drop-shadow(0 0 14px #2080c8);
+    opacity: 0.75;
+}
+
+.scene-throne {
+    position: absolute;
+    top: 15%;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 48px;
+    filter: drop-shadow(0 0 18px #8b0000);
+    opacity: 0.7;
+}
+
 /* Door indicators */
 
 .door {
@@ -309,4 +443,228 @@ button:hover {
     flex-direction: column;
     height: 100vh;
     background: #0a0a0a;
+}
+
+/* ── Enemy character ── */
+
+.enemy {
+    position: absolute;
+    width: 36px;
+    height: 48px;
+    background: linear-gradient(180deg, #f87171, #991b1b);
+    border-radius: 6px 6px 3px 3px;
+    border: 2px solid #fca5a5;
+}
+
+.enemy-aggravated {
+    border-color: #ff2222;
+    animation: enemy-pulse 0.4s infinite alternate;
+}
+
+@keyframes enemy-pulse {
+    from { box-shadow: 0 0 6px #ff0000; }
+    to   { box-shadow: 0 0 20px #ff4444; }
+}
+
+/* ── Save menu ── */
+
+.save-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.78);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+}
+
+.save-menu {
+    background: #0a0a0a;
+    border: 3px solid #7c3aed;
+    padding: 32px 48px;
+    min-width: 300px;
+}
+
+.save-menu-title {
+    font-size: 16px;
+    color: #c4b5fd;
+    letter-spacing: 3px;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+.save-menu-location {
+    font-size: 14px;
+    color: #e0e0e0;
+    margin-bottom: 6px;
+}
+
+.save-menu-stat {
+    font-size: 12px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.save-menu-buttons {
+    margin-top: 20px;
+    display: flex;
+    gap: 10px;
+}
+
+.save-confirm {
+    margin-top: 14px;
+    font-size: 12px;
+    color: #86efac;
+}
+
+/* ── Ending screen ── */
+
+.ending-overlay {
+    position: fixed;
+    inset: 0;
+    background: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+.ending-text {
+    color: white;
+    font-size: 32px;
+    letter-spacing: 4px;
+    font-family: 'Consolas', monospace;
+    opacity: 0;
+    animation: fadeInText 1.5s ease-in 2s forwards;
+}
+
+@keyframes fadeInText {
+    to { opacity: 1; }
+}
+
+/* ── Title screen ── */
+
+.title-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    background: black;
+    gap: 40px;
+}
+
+.title-game-name {
+    font-size: 72px;
+    letter-spacing: 20px;
+    color: #c4b5fd;
+    font-family: 'Consolas', monospace;
+    font-weight: normal;
+    text-shadow: 0 0 40px #7c3aed, 0 0 80px #4c1d95;
+    margin-bottom: 10px;
+}
+
+.title-slots-row {
+    display: flex;
+    gap: 20px;
+}
+
+.title-slot {
+    width: 210px;
+    min-height: 130px;
+    border: 2px solid #2a2a2a;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    transition: border-color 0.1s, background 0.1s;
+}
+
+.title-slot-selected {
+    border-color: #7c3aed;
+    background: #0e0a1a;
+}
+
+.title-slot-copy-target {
+    border-color: #2563eb;
+    background: #05080f;
+}
+
+.title-slot-header {
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: #555;
+    margin-bottom: 8px;
+}
+
+.title-slot-room {
+    font-size: 13px;
+    color: #c4b5fd;
+    margin-bottom: 4px;
+}
+
+.title-slot-stat {
+    font-size: 11px;
+    color: #777;
+}
+
+.title-slot-empty {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #3a3a3a;
+    font-size: 13px;
+}
+
+.title-prompt-area {
+    height: 56px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.title-prompt {
+    font-size: 12px;
+    color: #555;
+    letter-spacing: 1px;
+}
+
+.title-actions {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+    font-size: 13px;
+}
+
+.title-action {
+    color: #666;
+    letter-spacing: 1px;
+    padding: 4px 14px;
+    border: 1px solid transparent;
+}
+
+.title-action-selected {
+    color: #e0e0e0;
+    border-color: #7c3aed;
+}
+
+.title-action-hint {
+    font-size: 11px;
+    color: #444;
+}
+
+.title-confirm {
+    text-align: center;
+    font-size: 13px;
+    line-height: 2;
+    color: #e0e0e0;
+}
+
+.title-confirm-yes {
+    color: #f87171;
+}
+
+.title-confirm-no {
+    color: #666;
 }

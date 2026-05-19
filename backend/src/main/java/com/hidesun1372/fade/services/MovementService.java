@@ -92,7 +92,7 @@ public class MovementService {
                     default -> { yield 72; }
                 }
             } case 73 -> {
-                if (direction.equals("WEST")) yield 72;
+                if (direction.equals("EAST")) yield 72;
                 else yield 73;
             } case 74 -> {
                 if (direction.equals("SOUTH")) yield 72;
