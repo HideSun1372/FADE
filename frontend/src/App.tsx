@@ -4,6 +4,7 @@ import type { Directions } from './types';
 import Battle from './Battle'
 import GameScene from './GameScene'
 import TitleScreen from './TitleScreen'
+import Credits from './Credits'
 
 const SPEED = 0.45;
 const ENEMY_SPEED = 0.3;
@@ -79,7 +80,8 @@ function App() {
     const [saveConfirm, setSaveConfirm] = useState(false);
     const [hasFaded, setHasFaded] = useState(false);
     const [showEnding, setShowEnding] = useState(false);
-    const [phase, setPhase] = useState<'loading' | 'title' | 'game'>('loading');
+    const [showEndingButton, setShowEndingButton] = useState(false);
+    const [phase, setPhase] = useState<'loading' | 'title' | 'game' | 'credits'>('loading');
     const [activeSlot, setActiveSlot] = useState(1);
     const [saveSlots, setSaveSlots] = useState<any[]>([]);
 
@@ -111,7 +113,7 @@ function App() {
     hasFadedRef.current = hasFaded;
     const showEndingRef = useRef(false);
     showEndingRef.current = showEnding;
-    const phaseRef = useRef<'loading' | 'title' | 'game'>('loading');
+    const phaseRef = useRef<'loading' | 'title' | 'game' | 'credits'>('loading');
     phaseRef.current = phase;
     const room62NorthUnlockShownRef = useRef(false);
     const hasRoom62KeyRef = useRef(false);
@@ -288,6 +290,10 @@ function App() {
     const handleNewGame = (slotId: number) => {
         setSaveMenuOpen(false);
         setActiveSlot(slotId);
+        setCurrentLine(0);
+        setVisibleChars(0);
+        setDialogueDismissed(false);
+        isDialogueCompleteRef.current = false;
         setPhase('game');
     };
 
@@ -302,6 +308,16 @@ function App() {
         await fetch(`http://localhost:8080/api/save/${slotId}`, { method: 'DELETE' });
         const res = await fetch('http://localhost:8080/api/save');
         setSaveSlots(res.ok ? await res.json() : []);
+    };
+
+    const handleReturnToTitle = async () => {
+        await saveGame();
+        const res = await fetch('http://localhost:8080/api/save');
+        const data = res.ok ? await res.json() : [];
+        setSaveSlots(Array.isArray(data) ? data : []);
+        setShowEnding(false);
+        setShowEndingButton(false);
+        setPhase('title');
     };
 
     const handleCopySave = async (fromId: number, toId: number) => {
@@ -715,6 +731,12 @@ function App() {
     }, [fadePercent]);
 
     useEffect(() => {
+        if (!showEnding) return;
+        const t = setTimeout(() => setShowEndingButton(true), 3500);
+        return () => clearTimeout(t);
+    }, [showEnding]);
+
+    useEffect(() => {
         if (roomID === 6 && dialogueDismissed && !battlesWon.has(6) && !isBattling) {
             isBattlingRef.current = true;
             setIsBattling(true);
@@ -761,6 +783,7 @@ function App() {
 
     useEffect(() => {
         const interval = setInterval(() => {
+            if (phaseRef.current !== 'game') return;
             setVisibleChars(prev => {
                 if (prev >= activeDialogue[currentLine].length) {
                     clearInterval(interval);
@@ -873,13 +896,18 @@ function App() {
 
     if (phase === 'loading') return null;
 
+    if (phase === 'credits') {
+        return <Credits onBack={() => setPhase('title')} />;
+    }
+
     if (phase === 'title') {
         return <TitleScreen
             slots={slotInfos}
             onNewGame={handleNewGame}
             onLoadGame={handleLoadGame}
             onDeleteSave={handleDeleteSave}
-            onCopySave={handleCopySave} />;
+            onCopySave={handleCopySave}
+            onCredits={() => setPhase('credits')} />;
     }
 
     if (isBattling) {
@@ -942,7 +970,12 @@ function App() {
 
             {showEnding && (
                 <div className="ending-overlay">
-                    <p className="ending-text">You win?</p>
+                    <div className="ending-content">
+                        <p className="ending-text">You win?</p>
+                        {showEndingButton && (
+                            <button className="ending-button" onClick={handleReturnToTitle}>Return to Title</button>
+                        )}
+                    </div>
                 </div>
             )}
 

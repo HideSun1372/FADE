@@ -13,17 +13,20 @@ interface TitleScreenProps {
     onLoadGame: (slotId: number) => void;
     onDeleteSave: (slotId: number) => void;
     onCopySave: (fromId: number, toId: number) => void;
+    onCredits: () => void;
 }
 
 type Mode = 'slots' | 'actions' | 'delete_confirm' | 'copy_target';
+type Focus = 'slots' | 'credits_btn';
 
 const ACTIONS = ['Load', 'Delete', 'Copy'];
 
-export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave, onCopySave }: TitleScreenProps) {
+export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits }: TitleScreenProps) {
     const [slotCursor, setSlotCursor] = useState(0);
     const [mode, setMode] = useState<Mode>('slots');
     const [actionCursor, setActionCursor] = useState(0);
     const [copyCursor, setCopyCursor] = useState(0);
+    const [focus, setFocus] = useState<Focus>('slots');
 
     const copyTargets = [0, 1, 2].filter(i => i !== slotCursor);
 
@@ -32,16 +35,26 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
             e.preventDefault();
 
             if (mode === 'slots') {
-                if (e.key === 'ArrowLeft') {
-                    setSlotCursor(prev => (prev + 2) % 3);
-                } else if (e.key === 'ArrowRight') {
-                    setSlotCursor(prev => (prev + 1) % 3);
-                } else if (e.key.toLowerCase() === 'z') {
-                    if (slots[slotCursor] === null) {
-                        onNewGame(slotCursor + 1);
-                    } else {
-                        setActionCursor(0);
-                        setMode('actions');
+                if (focus === 'slots') {
+                    if (e.key === 'ArrowLeft') {
+                        setSlotCursor(prev => (prev + 2) % 3);
+                    } else if (e.key === 'ArrowRight') {
+                        setSlotCursor(prev => (prev + 1) % 3);
+                    } else if (e.key === 'ArrowDown') {
+                        setFocus('credits_btn');
+                    } else if (e.key.toLowerCase() === 'z') {
+                        if (slots[slotCursor] === null) {
+                            onNewGame(slotCursor + 1);
+                        } else {
+                            setActionCursor(0);
+                            setMode('actions');
+                        }
+                    }
+                } else if (focus === 'credits_btn') {
+                    if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'x') {
+                        setFocus('slots');
+                    } else if (e.key.toLowerCase() === 'z') {
+                        onCredits();
                     }
                 }
             } else if (mode === 'actions') {
@@ -80,14 +93,17 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [mode, slotCursor, actionCursor, copyCursor, slots, copyTargets, onNewGame, onLoadGame, onDeleteSave, onCopySave]);
+    }, [mode, focus, slotCursor, actionCursor, copyCursor, slots, copyTargets, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits]);
 
     const renderPrompt = () => {
         if (mode === 'slots') {
+            if (focus === 'credits_btn') {
+                return <p className="title-prompt">▲: Back  ·  Z: Open Credits</p>;
+            }
             const slot = slots[slotCursor];
             return (
                 <p className="title-prompt">
-                    {slot ? 'Z: Open  ·  ◄►: Switch slot' : 'Z: New Game  ·  ◄►: Switch slot'}
+                    {slot ? 'Z: Open  ·  ◄►: Switch slot  ·  ▼: Credits' : 'Z: New Game  ·  ◄►: Switch slot  ·  ▼: Credits'}
                 </p>
             );
         }
@@ -129,7 +145,7 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
             <div className="title-slots-row">
                 {[0, 1, 2].map(index => {
                     const slot = slots[index];
-                    const isSelected = slotCursor === index && mode !== 'copy_target';
+                    const isSelected = slotCursor === index && mode !== 'copy_target' && focus === 'slots';
                     const isCopyHighlight = mode === 'copy_target' && copyTargets[copyCursor] === index;
                     return (
                         <div
@@ -149,6 +165,9 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
                         </div>
                     );
                 })}
+            </div>
+            <div className={`title-credits-btn${focus === 'credits_btn' ? ' title-credits-btn-selected' : ''}`}>
+                CREDITS
             </div>
             <div className="title-prompt-area">
                 {renderPrompt()}

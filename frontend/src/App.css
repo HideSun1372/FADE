@@ -529,6 +529,13 @@ button:hover {
     z-index: 100;
 }
 
+.ending-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 32px;
+}
+
 .ending-text {
     color: white;
     font-size: 32px;
@@ -538,8 +545,110 @@ button:hover {
     animation: fadeInText 1.5s ease-in 2s forwards;
 }
 
+.ending-button {
+    opacity: 0;
+    animation: fadeInText 0.6s ease-in 0.1s forwards;
+    background: transparent;
+    border: 1px solid #555;
+    color: #888;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 8px 24px;
+}
+
+.ending-button:hover {
+    border-color: #7c3aed;
+    color: #c4b5fd;
+    background: transparent;
+}
+
 @keyframes fadeInText {
     to { opacity: 1; }
+}
+
+/* ── Credits screen ── */
+
+.credits-screen {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100vh;
+    background: black;
+    padding: 48px 20px 24px;
+    overflow-y: auto;
+}
+
+.credits-title {
+    font-size: 28px;
+    letter-spacing: 12px;
+    color: #c4b5fd;
+    font-weight: normal;
+    margin-bottom: 48px;
+    text-shadow: 0 0 24px #7c3aed;
+}
+
+.credits-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 28px;
+    width: 100%;
+    max-width: 400px;
+    flex: 1;
+}
+
+.credits-section {
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.credits-role {
+    font-size: 10px;
+    letter-spacing: 4px;
+    color: #555;
+    margin-bottom: 2px;
+}
+
+.credits-name {
+    font-size: 16px;
+    color: #e0e0e0;
+    letter-spacing: 1px;
+}
+
+.credits-divider {
+    width: 60px;
+    height: 1px;
+    background: #2a2a2a;
+}
+
+.credits-footnote {
+    font-size: 11px;
+    color: #3a3a3a;
+    letter-spacing: 2px;
+    margin-top: -16px;
+}
+
+.credits-back-btn {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #444;
+    border: 1px solid #2a2a2a;
+    padding: 8px 32px;
+    margin-top: 32px;
+}
+
+.credits-back-btn-selected {
+    color: #c4b5fd;
+    border-color: #7c3aed;
+}
+
+.credits-back-hint {
+    font-size: 11px;
+    color: #444;
+    letter-spacing: 1px;
+    margin-top: 10px;
 }
 
 /* ── Title screen ── */
@@ -667,4 +776,19 @@ button:hover {
 
 .title-confirm-no {
     color: #666;
+}
+
+.title-credits-btn {
+    font-size: 11px;
+    letter-spacing: 4px;
+    color: #444;
+    border: 1px solid #2a2a2a;
+    padding: 8px 32px;
+    margin-top: 8px;
+    transition: color 0.1s, border-color 0.1s;
+}
+
+.title-credits-btn-selected {
+    color: #c4b5fd;
+    border-color: #7c3aed;
 }
