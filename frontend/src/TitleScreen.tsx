@@ -141,7 +141,7 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
 
     return (
         <div className="title-screen">
-            <h1 className="title-game-name">FADE</h1>
+            <h1 className="title-game-name">Faint Aura-Development Experiment</h1>
             <div className="title-slots-row">
                 {[0, 1, 2].map(index => {
                     const slot = slots[index];

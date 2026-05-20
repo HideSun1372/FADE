@@ -70,7 +70,7 @@ button:hover {
     width: 150px;
     height: 14px;
     background-color: #111;
-    border: 1px solid #7c3aed;
+    border:1px solid #7c3aed;
 }
 
 .fade-progress {
@@ -671,6 +671,9 @@ button:hover {
     font-weight: normal;
     text-shadow: 0 0 40px #7c3aed, 0 0 80px #4c1d95;
     margin-bottom: 10px;
+    line-height: 1;
+    text-align: center;
+    display: block;
 }
 
 .title-slots-row {
