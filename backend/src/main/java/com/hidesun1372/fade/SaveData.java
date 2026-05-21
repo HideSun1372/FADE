@@ -3,11 +3,21 @@ package com.hidesun1372.fade;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name = "save_data")
+@Table(
+    name = "save_data_device",
+    uniqueConstraints = @UniqueConstraint(columnNames = {"device_id", "slot_id"})
+)
 public class SaveData {
 
     @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    @Column(name = "device_id")
+    private String deviceId;
+
+    @Column(name = "slot_id")
+    private int slotId;
 
     private int roomId;
     private double playerX;
@@ -29,6 +39,12 @@ public class SaveData {
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
+
+    public String getDeviceId() { return deviceId; }
+    public void setDeviceId(String deviceId) { this.deviceId = deviceId; }
+
+    public int getSlotId() { return slotId; }
+    public void setSlotId(int slotId) { this.slotId = slotId; }
 
     public int getRoomId() { return roomId; }
     public void setRoomId(int roomId) { this.roomId = roomId; }

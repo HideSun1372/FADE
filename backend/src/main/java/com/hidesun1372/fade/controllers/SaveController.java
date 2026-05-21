@@ -17,26 +17,31 @@ public class SaveController {
     private SaveRepository saveRepository;
 
     @GetMapping
-    public ResponseEntity<List<SaveData>> getAllSaves() {
-        return ResponseEntity.ok(saveRepository.findAll());
+    public ResponseEntity<List<SaveData>> getAllSaves(@RequestParam String deviceId) {
+        return ResponseEntity.ok(saveRepository.findByDeviceId(deviceId));
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<SaveData> getSave(@PathVariable Long id) {
-        return saveRepository.findById(id)
+    @GetMapping("/{slotId}")
+    public ResponseEntity<SaveData> getSave(@PathVariable int slotId, @RequestParam String deviceId) {
+        return saveRepository.findByDeviceIdAndSlotId(deviceId, slotId)
                 .map(ResponseEntity::ok)
                 .orElse(ResponseEntity.notFound().build());
     }
 
-    @PostMapping("/{id}")
-    public ResponseEntity<SaveData> postSave(@PathVariable Long id, @RequestBody SaveData saveData) {
-        saveData.setId(id);
+    @PostMapping("/{slotId}")
+    public ResponseEntity<SaveData> postSave(@PathVariable int slotId, @RequestParam String deviceId, @RequestBody SaveData saveData) {
+        saveData.setDeviceId(deviceId);
+        saveData.setSlotId(slotId);
+        saveData.setId(saveRepository.findByDeviceIdAndSlotId(deviceId, slotId)
+                .map(SaveData::getId)
+                .orElse(null));
         return ResponseEntity.ok(saveRepository.save(saveData));
     }
 
-    @DeleteMapping("/{id}")
-    public ResponseEntity<Void> deleteSave(@PathVariable Long id) {
-        saveRepository.deleteById(id);
+    @DeleteMapping("/{slotId}")
+    public ResponseEntity<Void> deleteSave(@PathVariable int slotId, @RequestParam String deviceId) {
+        saveRepository.findByDeviceIdAndSlotId(deviceId, slotId)
+                .ifPresent(saveRepository::delete);
         return ResponseEntity.noContent().build();
     }
 }

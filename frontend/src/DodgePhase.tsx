@@ -36,12 +36,15 @@ const INV_FRAMES = 30;
 type Props = {
     roomID: number;
     onPhaseEnd: (damageTaken: number) => void;
+    onDamage?: (dmg: number) => void;
 };
 
-export default function DodgePhase({ roomID, onPhaseEnd }: Props) {
+export default function DodgePhase({ roomID, onPhaseEnd, onDamage }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const onPhaseEndRef = useRef(onPhaseEnd);
     onPhaseEndRef.current = onPhaseEnd;
+    const onDamageRef = useRef(onDamage);
+    onDamageRef.current = onDamage;
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -123,6 +126,7 @@ export default function DodgePhase({ roomID, onPhaseEnd }: Props) {
                 if (hx < b.x + b.w && hx + SOUL_HITBOX > b.x && hy < b.y + b.h && hy + SOUL_HITBOX > b.y) {
                     damageTaken += pattern.damagePerHit;
                     invFrames = INV_FRAMES;
+                    onDamageRef.current?.(pattern.damagePerHit);
                     break;
                 }
             }

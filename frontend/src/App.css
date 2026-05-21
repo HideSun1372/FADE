@@ -399,6 +399,87 @@ button:hover {
     color: #555;
 }
 
+.battle-screen {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.battle-sprites-area {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-around;
+    height: 55%;
+    flex-shrink: 0;
+    transition: opacity 0.5s ease;
+}
+
+.battle-sprite-slot {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.6s ease-out;
+}
+
+.battle-sprite-slot.left.entering  { transform: translateX(8vw); }
+.battle-sprite-slot.right.entering { transform: translateX(-8vw); }
+.battle-sprite-slot.left.idle      { transform: translateX(0); }
+.battle-sprite-slot.right.idle     { transform: translateX(0); }
+
+.battle-sprite-slot .player,
+.battle-sprite-slot .enemy {
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    transform: none !important;
+}
+
+.battle-panel {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.75);
+    border-top: 2px solid #7c3aed;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 20px;
+    gap: 8px;
+    overflow: hidden;
+}
+
+.battle-enemy-name {
+    font-size: 16px;
+    color: #c4b5fd;
+    letter-spacing: 2px;
+    text-align: center;
+}
+
+.battle-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.dodge-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+.dodge-overlay-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 540px;
+    padding: 0 16px;
+}
+
 /* ── Battle UI ── */
 
 .hp-bars-container {

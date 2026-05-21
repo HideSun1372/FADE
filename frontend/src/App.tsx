@@ -87,6 +87,19 @@ function App() {
 
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
+    const deviceIdRef = useRef<string>('');
+    if (!deviceIdRef.current) {
+        let stored = localStorage.getItem('fadeDeviceId');
+        if (!stored) {
+            stored = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+                const r = Math.random() * 16 | 0;
+                return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+            });
+            localStorage.setItem('fadeDeviceId', stored);
+        }
+        deviceIdRef.current = stored;
+    }
+
     const keysHeldRef = useRef(new Set<string>());
     const playerXRef = useRef(50);
     const playerYRef = useRef(50);
@@ -212,7 +225,7 @@ function App() {
     };
 
     const loadFromSave = async (slot: number) => {
-        const res = await fetch(`http://localhost:8080/api/save/${slot}`);
+        const res = await fetch(`http://localhost:8080/api/save/${slot}?deviceId=${deviceIdRef.current}`);
         let roomId = 0, px = 50, py = 50, dir = 'south';
         let cleared = new Set<number>(), bWon = new Set<number>(), vis = new Set<number>([0]);
         let hk = false, hk62 = false, ndu = false, water = 0, fade = 100;
@@ -259,7 +272,7 @@ function App() {
     };
 
     const saveGame = async () => {
-        await fetch(`http://localhost:8080/api/save/${activeSlot}`, {
+        await fetch(`http://localhost:8080/api/save/${activeSlot}?deviceId=${deviceIdRef.current}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -305,14 +318,14 @@ function App() {
     };
 
     const handleDeleteSave = async (slotId: number) => {
-        await fetch(`http://localhost:8080/api/save/${slotId}`, { method: 'DELETE' });
-        const res = await fetch('http://localhost:8080/api/save');
+        await fetch(`http://localhost:8080/api/save/${slotId}?deviceId=${deviceIdRef.current}`, { method: 'DELETE' });
+        const res = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
         setSaveSlots(res.ok ? await res.json() : []);
     };
 
     const handleReturnToTitle = async () => {
         await saveGame();
-        const res = await fetch('http://localhost:8080/api/save');
+        const res = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
         const data = res.ok ? await res.json() : [];
         setSaveSlots(Array.isArray(data) ? data : []);
         setShowEnding(false);
@@ -321,21 +334,24 @@ function App() {
     };
 
     const handleCopySave = async (fromId: number, toId: number) => {
-        const res = await fetch(`http://localhost:8080/api/save/${fromId}`);
+        const res = await fetch(`http://localhost:8080/api/save/${fromId}?deviceId=${deviceIdRef.current}`);
         if (res.ok) {
             const data = await res.json();
-            data.id = toId;
-            await fetch(`http://localhost:8080/api/save/${toId}`, {
+            data.id = null;
+            data.slotId = toId;
+            await fetch(`http://localhost:8080/api/save/${toId}?deviceId=${deviceIdRef.current}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            const listRes = await fetch('http://localhost:8080/api/save');
+            const listRes = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
             setSaveSlots(listRes.ok ? await listRes.json() : []);
         }
     };
 
     const activeDialogue = tempDialogue ?? allDialogue[roomID];
+    const activeDialogueRef = useRef<string[]>(activeDialogue);
+    activeDialogueRef.current = activeDialogue;
 
     const isDialogueComplete = dialogueDismissed;
     isDialogueCompleteRef.current = dialogueDismissed;
@@ -712,7 +728,7 @@ function App() {
 
     useEffect(() => {
         const checkSaves = async () => {
-            const res = await fetch('http://localhost:8080/api/save');
+            const res = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
             if (!res.ok) { setPhase('game'); return; }
             const data = await res.json();
             const saves = Array.isArray(data) ? data : [];
@@ -744,14 +760,23 @@ function App() {
     }, [dialogueDismissed, roomID, battlesWon, isBattling]);
 
     useEffect(() => {
+        if (currentLine >= activeDialogue.length) {
+            const lastLine = Math.max(0, activeDialogue.length - 1);
+            setCurrentLine(lastLine);
+            setVisibleChars(activeDialogue[lastLine]?.length ?? 0);
+        }
+    }, [currentLine, tempDialogue, roomID]);
+
+    useEffect(() => {
         if (cHeld) {
             const interval = setInterval(() => {
                 setCurrentLine(prev => {
-                    if (prev < activeDialogue.length - 1 && activeDialogue[prev + 1]) {
-                        setVisibleChars(activeDialogue[prev + 1].length);
+                    const ad = activeDialogueRef.current;
+                    if (prev < ad.length - 1 && ad[prev + 1]) {
+                        setVisibleChars(ad[prev + 1].length);
                         return prev + 1;
                     } else {
-                        setVisibleChars(activeDialogue[prev].length);
+                        setVisibleChars(ad[prev]?.length);
                         return prev;
                     }
                 });
@@ -773,19 +798,19 @@ function App() {
                 setDialogueDismissed(true);
             }
         }
-    }, [cHeld, currentLine, visibleChars, dialogueDismissed]);
+    }, [cHeld, currentLine, visibleChars, dialogueDismissed, tempDialogue, roomID]);
 
     useEffect(() => {
         if (xHeld) {
-            setVisibleChars(activeDialogue[currentLine].length);
+            setVisibleChars(activeDialogue[currentLine]?.length);
         }
-    }, [xHeld, currentLine]);
+    }, [xHeld, currentLine, tempDialogue]);
 
     useEffect(() => {
         const interval = setInterval(() => {
             if (phaseRef.current !== 'game') return;
             setVisibleChars(prev => {
-                if (prev >= activeDialogue[currentLine].length) {
+                if (prev >= activeDialogue[currentLine]?.length) {
                     clearInterval(interval);
                     return prev;
                 }
@@ -794,6 +819,7 @@ function App() {
         }, 50);
         return () => clearInterval(interval);
     }, [currentLine, roomID, tempDialogue]);
+
 
     useEffect(() => {
         const handleKeyDown = (event: KeyboardEvent) => {
@@ -884,7 +910,7 @@ function App() {
 
     const saveSlotsList = Array.isArray(saveSlots) ? saveSlots : [];
     const slotInfos = [1, 2, 3].map(id => {
-        const save = saveSlotsList.find((s: any) => s.id === id);
+        const save = saveSlotsList.find((s: any) => s.slotId === id);
         if (!save) return null;
         return {
             id,
@@ -916,7 +942,8 @@ function App() {
             onBattleEnd={handleBattleEnd}
             setBattlesWon={setBattlesWon}
             waterAmount={waterAmount}
-            setWaterAmount={setWaterAmount} />;
+            setWaterAmount={setWaterAmount}
+            playerDirection={playerDirection} />;
     }
 
     return (
