@@ -54,7 +54,10 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     const [enemyWin, setEnemyWin] = useState(false);
     const [isDefending, setIsDefending] = useState(false);
     const [showWinScreen, setShowWinScreen] = useState(false);
-    const [showLoseScreen, setShowLoseScreen] = useState(false);
+    const [showWinButton, setShowWinButton] = useState(false);
+    const [gameOverPhase, setGameOverPhase] = useState<null | 'frozen' | 'black' | 'heading' | 'dialogue' | 'done'>(null);
+    const [goLine, setGoLine] = useState(0);
+    const [goChars, setGoChars] = useState(0);
     const [isEnemyTurn, setIsEnemyTurn] = useState(false);
     const [dodgePhaseActive, setDodgePhaseActive] = useState(false);
     const [enemyTaunt, setEnemyTaunt] = useState<string | null>(null);
@@ -62,6 +65,19 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     const pendingDefendRef = useRef(false);
     const currentPlayerHPRef = useRef(100);
     currentPlayerHPRef.current = currentPlayerHP;
+    const currentEnemyHPRef = useRef(0);
+    currentEnemyHPRef.current = currentEnemyHP;
+    const gameOverPhaseRef = useRef<null | 'frozen' | 'black' | 'heading' | 'dialogue' | 'done'>(null);
+    gameOverPhaseRef.current = gameOverPhase;
+    const goLineRef = useRef(0);
+    goLineRef.current = goLine;
+    const goCharsRef = useRef(0);
+    goCharsRef.current = goChars;
+
+    const gameOverDialogue =
+        roomID === 7 ? ["Pathetic mortal.", "I expected better from you.", "Try harder next time."] :
+        roomID === 6 ? ["You're close to the end!", "Are you going to fall that easily?"] :
+                       ["I'm counting on you!", "Don't give up!"];
 
     const [tutLine, setTutLine] = useState(0);
     const [tutChars, setTutChars] = useState(0);
@@ -69,6 +85,9 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
 
     const [xHeld, setXHeld] = useState(false);
     const [cHeld, setCHeld] = useState(false);
+    const [selectedAction, setSelectedAction] = useState(0);
+    const selectedActionRef = useRef(0);
+    selectedActionRef.current = selectedAction;
 
     function getRandomDamage(min: number, max: number): number {
         return Math.floor(Math.random() * (max - min + 1)) + min;
@@ -83,31 +102,31 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
         const fetchEnemy = async () => {
             const response = await fetch(`http://localhost:8080/api/enemy?EnemyID=${roomID}`);
             const text = await response.text();
-            setEnemy(JSON.parse(text));
+            const parsed = JSON.parse(text);
+            setEnemy(parsed);
+            if (parsed?.health) setCurrentEnemyHP(parsed.health);
         };
         fetchEnemy();
     }, []);
-
-    useEffect(() => {
-        if (enemy?.health) setCurrentEnemyHP(enemy.health);
-    }, [enemy]);
 
     useEffect(() => {
         if (playerWin) setBattlesWon(prev => new Set([...prev, roomID]));
     }, [playerWin, roomID, setBattlesWon]);
 
     useEffect(() => {
-        if (playerWin) {
-            const timer = setTimeout(() => setShowWinScreen(true), 1000);
-            return () => clearTimeout(timer);
-        }
+        if (!playerWin) return;
+        const t1 = setTimeout(() => setShowWinScreen(true), 1000);
+        const t2 = setTimeout(() => setShowWinButton(true), 2500);
+        return () => { clearTimeout(t1); clearTimeout(t2); };
     }, [playerWin]);
 
     useEffect(() => {
-        if (enemyWin) {
-            const timer = setTimeout(() => setShowLoseScreen(true), 1000);
-            return () => clearTimeout(timer);
-        }
+        if (!enemyWin) return;
+        setGameOverPhase('frozen');
+        const t1 = setTimeout(() => setGameOverPhase('black'), 3000);
+        const t2 = setTimeout(() => setGameOverPhase('heading'), 5000);
+        const t3 = setTimeout(() => setGameOverPhase('dialogue'), 6500);
+        return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
     }, [enemyWin]);
 
     useEffect(() => {
@@ -187,9 +206,64 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
             setEnemyTaunt(taunt);
             setTimeout(() => { setEnemyTaunt(null); setDodgePhaseActive(true); }, 1800);
         } else {
-            setDodgePhaseActive(true);
+            setTimeout(() => setDodgePhaseActive(true), 1000);
         }
     };
+
+    useEffect(() => {
+        if (!showWinScreen || !showWinButton) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() === 'z') onBattleEnd(true);
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [showWinScreen, showWinButton]);
+
+    useEffect(() => {
+        if (!tutDone || dodgePhaseActive || isEnemyTurn || !!enemyTaunt || showWinScreen || gameOverPhase !== null || !enemy) return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                setSelectedAction(prev => prev === 0 ? 1 : 0);
+            } else if (e.key.toLowerCase() === 'z') {
+                if (selectedActionRef.current === 0) {
+                    if (roomID !== 6 || waterAmount === 0) handleAttack();
+                    else handleSplashWater();
+                } else {
+                    handleDefend();
+                }
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [tutDone, dodgePhaseActive, isEnemyTurn, enemyTaunt, showWinScreen, gameOverPhase, roomID, waterAmount, enemy]);
+
+    useEffect(() => {
+        if (gameOverPhase !== 'dialogue') return;
+        const interval = setInterval(() => {
+            setGoChars(prev => prev >= gameOverDialogue[goLine].length ? prev : prev + 1);
+        }, 40);
+        return () => clearInterval(interval);
+    }, [gameOverPhase, goLine]);
+
+    useEffect(() => {
+        if (gameOverPhase !== 'dialogue' && gameOverPhase !== 'done') return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() !== 'z') return;
+            if (gameOverPhaseRef.current === 'done') { onBattleEnd(false); return; }
+            const line = goLineRef.current;
+            const chars = goCharsRef.current;
+            if (chars < gameOverDialogue[line].length) return;
+            if (line < gameOverDialogue.length - 1) {
+                setGoLine(line + 1);
+                setGoChars(0);
+            } else {
+                setGameOverPhase('done');
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [gameOverPhase]);
 
     const handleDodgeDamage = (dmg: number) => {
         const d = pendingDefendRef.current ? Math.floor(dmg / 2) : dmg;
@@ -199,8 +273,6 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
         if (newHP <= 0) {
             if (pendingDefendRef.current) { pendingDefendRef.current = false; setIsDefending(false); }
             setEnemyWin(true);
-            setDodgePhaseActive(false);
-            setIsEnemyTurn(false);
         }
     };
 
@@ -214,7 +286,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
         setIsEnemyTurn(true);
         let damage = getRandomDamage(20, 40);
         if (roomID === 6) damage *= 2;
-        const newEnemyHP = Math.max(0, currentEnemyHP - damage);
+        const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
         if (newEnemyHP <= 0) {
             setPlayerWin(true);
@@ -234,7 +306,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
         setIsEnemyTurn(true);
         setWaterAmount(prev => prev - 1);
         const damage = getRandomDamage(50, 90);
-        const newEnemyHP = Math.max(0, currentEnemyHP - damage);
+        const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
         if (newEnemyHP <= 0) {
             setPlayerWin(true);
@@ -242,24 +314,6 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
             beginEnemyRetaliation();
         }
     };
-
-    if (showLoseScreen) {
-        return (
-            <>
-                <h1>{roomID === 7 ? 'Huh. I expected better from you. Pathetic.' : 'The enemy have won!'}</h1>
-                <button onClick={() => onBattleEnd(false)}>Go back</button>
-            </>
-        );
-    }
-
-    if (showWinScreen) {
-        return (
-            <>
-                <h1>You have won!</h1>
-                <button onClick={() => onBattleEnd(true)}>Go back</button>
-            </>
-        );
-    }
 
     const roomBg = backgrounds[roomID] ?? 'radial-gradient(ellipse at center, #111, #000)';
     const dir = playerDirection ?? 'south';
@@ -312,10 +366,10 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
                         ? <p style={{ color: '#ff6666', fontStyle: 'italic', padding: '8px 0' }}>{enemyTaunt}</p>
                         : <div className="battle-actions">
                             {(roomID !== 6 || waterAmount === 0)
-                                ? <button onClick={handleAttack} disabled={isEnemyTurn || !enemy}>Attack</button>
-                                : <button onClick={handleSplashWater} disabled={isEnemyTurn || waterAmount === 0}>Splash Water</button>
+                                ? <button onClick={handleAttack} disabled={isEnemyTurn || !enemy || enemyWin} className={selectedAction === 0 ? 'battle-action-selected' : ''}>Attack</button>
+                                : <button onClick={handleSplashWater} disabled={isEnemyTurn || waterAmount === 0 || enemyWin} className={selectedAction === 0 ? 'battle-action-selected' : ''}>Splash Water</button>
                             }
-                            <button onClick={handleDefend} disabled={isEnemyTurn || !enemy}>Defend</button>
+                            <button onClick={handleDefend} disabled={isEnemyTurn || !enemy || enemyWin} className={selectedAction === 1 ? 'battle-action-selected' : ''}>Defend</button>
                           </div>
                 )}
 
@@ -325,7 +379,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
                             ? 'Z: Next  ·  X: Skip text  ·  C: Auto-advance'
                             : enemyTaunt
                                 ? '...'
-                                : 'Attack / Defend'
+                                : '← →: Select  ·  Z: Confirm'
                         }
                     </p>
                 </div>
@@ -346,11 +400,47 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
                                 <div className="hp-fill" style={{ width: `${currentPlayerHP}%` }}></div>
                             </div>
                         </div>
-                        <DodgePhase roomID={roomID} onPhaseEnd={handlePhaseEnd} onDamage={handleDodgeDamage} />
+                        <DodgePhase roomID={roomID} onPhaseEnd={handlePhaseEnd} onDamage={handleDodgeDamage} frozen={enemyWin} />
                         <p className="controls-hint" style={{ marginTop: '6px', textAlign: 'center' }}>
                             Arrow Keys: Move your soul  ·  Dodge the bullets!
                         </p>
                     </div>
+                </div>
+            )}
+
+            {showWinScreen && (
+                <div className="gameover-overlay">
+                    <h1 className="gameover-heading">Victory!</h1>
+                    {showWinButton && (
+                        <>
+                            <button onClick={() => onBattleEnd(true)}>Go back</button>
+                            <p style={{ fontSize: '11px', color: '#555', marginTop: '-20px' }}>Z: Go back</p>
+                        </>
+                    )}
+                </div>
+            )}
+
+            {gameOverPhase !== null && gameOverPhase !== 'frozen' && (
+                <div className="gameover-overlay">
+                    {gameOverPhase !== 'black' && (
+                        <h1 className="gameover-heading">GAME OVER</h1>
+                    )}
+                    {(gameOverPhase === 'dialogue' || gameOverPhase === 'done') && (
+                        <div className="gameover-dialogue-box">
+                            <p className="gameover-dialogue-text">
+                                {gameOverDialogue[goLine].substring(0, goChars)}
+                            </p>
+                            {gameOverPhase === 'dialogue' && goChars >= gameOverDialogue[goLine].length && (
+                                <p className="gameover-hint">Z: Next</p>
+                            )}
+                        </div>
+                    )}
+                    {gameOverPhase === 'done' && (
+                        <>
+                            <button onClick={() => onBattleEnd(false)}>Go back</button>
+                            <p style={{ fontSize: '11px', color: '#555', marginTop: '-20px' }}>Z: Go back</p>
+                        </>
+                    )}
                 </div>
             )}
         </div>

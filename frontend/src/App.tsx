@@ -5,6 +5,7 @@ import Battle from './Battle'
 import GameScene from './GameScene'
 import TitleScreen from './TitleScreen'
 import Credits from './Credits'
+import Intro from './Intro'
 
 const SPEED = 0.45;
 const ENEMY_SPEED = 0.3;
@@ -79,11 +80,18 @@ function App() {
     const [saveMenuOpen, setSaveMenuOpen] = useState(false);
     const [saveConfirm, setSaveConfirm] = useState(false);
     const [hasFaded, setHasFaded] = useState(false);
+    const [fadePhase, setFadePhase] = useState<null | 'heading' | 'dialogue' | 'done'>(null);
+    const [fadeLine, setFadeLine] = useState(0);
+    const [fadeChars, setFadeChars] = useState(0);
+    const [fadedAtRoom7, setFadedAtRoom7] = useState(false);
     const [showEnding, setShowEnding] = useState(false);
     const [showEndingButton, setShowEndingButton] = useState(false);
-    const [phase, setPhase] = useState<'loading' | 'title' | 'game' | 'credits'>('loading');
+    const [phase, setPhase] = useState<'loading' | 'title' | 'intro' | 'game' | 'credits'>('loading');
     const [activeSlot, setActiveSlot] = useState(1);
     const [saveSlots, setSaveSlots] = useState<any[]>([]);
+    const [unsavedChanges, setUnsavedChanges] = useState(false);
+    const [returnConfirm, setReturnConfirm] = useState(false);
+    const [saveMenuCursor, setSaveMenuCursor] = useState(0);
 
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
@@ -124,9 +132,22 @@ function App() {
     saveMenuOpenRef.current = saveMenuOpen;
     const hasFadedRef = useRef(false);
     hasFadedRef.current = hasFaded;
+    const fadePhaseRef = useRef<null | 'heading' | 'dialogue' | 'done'>(null);
+    fadePhaseRef.current = fadePhase;
+    const fadeLineRef = useRef(0);
+    fadeLineRef.current = fadeLine;
+    const fadeCharsRef = useRef(0);
+    fadeCharsRef.current = fadeChars;
+    const fadeDialogue = fadedAtRoom7
+        ? ["Pathetic.", "Faded away at the very last room.", "Try again, mortal."]
+        : ["You have faded away.", "It's ok! You can try again!"];
     const showEndingRef = useRef(false);
     showEndingRef.current = showEnding;
-    const phaseRef = useRef<'loading' | 'title' | 'game' | 'credits'>('loading');
+    const showEndingButtonRef = useRef(false);
+    showEndingButtonRef.current = showEndingButton;
+    const saveMenuCursorRef = useRef(0);
+    saveMenuCursorRef.current = saveMenuCursor;
+    const phaseRef = useRef<'loading' | 'title' | 'intro' | 'game' | 'credits'>('loading');
     phaseRef.current = phase;
     const room62NorthUnlockShownRef = useRef(false);
     const hasRoom62KeyRef = useRef(false);
@@ -166,7 +187,7 @@ function App() {
     };
 
     const allDialogue: Record<number, string[]> = {
-        0: ["Hello there, fellow player.", "You are fading away.", "I know it sounds crazy, but you have to trust me.", "I will be your guide on your new adventure.", "I will reveal more information as you continue on your journey.", "But first, to exit this room, you need a key! Walk into the east door to find it.", "Try to find which one."],
+        0: ["Hello there, fellow player.", "You are fading away.", "I know it sounds crazy, but you have to trust me.", "I will be your guide on your new adventure.", "I will reveal more information as you continue on your journey.", "But first, to exit this room, you need a key!", "Walk into the east door to find it."],
         1: ["Welcome to the new world!", "In this world, don't trust anyone! Or else they will come back and betray you!", "Now you might be wondering, why trust me? I am your only trusted tour guide on this adventure.", "Here, it is kill or be killed. No one cares about your feelings.", "So you have to gain the upper hand in this world! Don't seem weak!", "Be careful to watch your fading progress bar on the top right, it will tell you how long you have before you will fully fade away."],
         2: ['This place is called "The Haunted Fields". Be careful! As beautiful as the grass may seem, they are dangerous.', "Make sure you are not excessively coming into contact with them. They get aggressive once in a while.", "If you get tired, do not loiter out in the open! Sometimes, the clouds above gets angry if you are just staying in one spot.", "If you do wish to rest, you can do so under a tree where the clouds does not have a vision of you.", "That's basically all you have to know about The Haunted Fields. Stay safe, I'm on your side."],
         3: ["Woo! Finally got out of there! But here is where your adventures become harder.", "Welcome to the Volcanic Wastelands!", "In contrast to the cool Grasslands, the Volcano will incinerate you if you aren't careful!", "Ready? Let's explore!"],
@@ -190,6 +211,17 @@ function App() {
         74: ["Alright, one route. let's go!"],
         75: ["I have a feeling that we are close to the end. Do not let your guard down! Anyone could still be here!", "I can already hear the king."]
     };
+
+    const introDialogue = [
+        "Hello there, fellow player.",
+        "You are fading away.",
+        "I know it sounds crazy, but you have to trust me.",
+        "I will be your guide on your new adventure.",
+        "Now, you may thinking. What journey is this about?",
+        "Well, since you're fading away anyways, why not try to find the ultimate treasure of this world?",
+        "This shall be a tedious journey, but I'm sure you could handle it!",
+        "I will reveal more information as you continue on your journey.",
+    ];
 
     const rooms: Record<number, { description: string; parentRoom: number | null }> = {
         0: { description: "This is a dream. Is it? Why do you see someone coming towards you? Is someone there?", parentRoom: null },
@@ -224,14 +256,16 @@ function App() {
         SOUTH: { x: 50, y: 12 },
     };
 
-    const loadFromSave = async (slot: number) => {
+    const loadFromSave = async (slot: number, fadeBonus: number = 0) => {
         const res = await fetch(`http://localhost:8080/api/save/${slot}?deviceId=${deviceIdRef.current}`);
         let roomId = 0, px = 50, py = 50, dir = 'south';
         let cleared = new Set<number>(), bWon = new Set<number>(), vis = new Set<number>([0]);
         let hk = false, hk62 = false, ndu = false, water = 0, fade = 100;
+        let rawData: any = null;
 
         if (res.ok) {
             const d = await res.json();
+            rawData = d;
             roomId = d.roomId;
             px = d.playerX; py = d.playerY; dir = d.playerDirection;
             const parse = (s: string) => new Set<number>(s ? s.split(',').map(Number).filter((n: number) => !isNaN(n) && n !== 0 || n === 0) : []);
@@ -242,12 +276,27 @@ function App() {
             water = d.waterAmount; fade = d.fadePercent;
         }
 
+        if (fadeBonus > 0 && rawData) {
+            fade = Math.min(100, fade + fadeBonus);
+            await fetch(`http://localhost:8080/api/save/${slot}?deviceId=${deviceIdRef.current}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ ...rawData, fadePercent: fade }),
+            });
+        }
+
         setRoomID(roomId); roomIDRef.current = roomId;
         playerXRef.current = px; setPlayerX(px);
         playerYRef.current = py; setPlayerY(py);
         setPlayerDirection(dir);
         setClearedRooms(cleared); clearedRoomsRef.current = cleared;
         setBattlesWon(bWon); battlesWonRef.current = bWon;
+        room22PostBattleShownRef.current = bWon.has(22);
+        room4PostBattleShownRef.current = bWon.has(4);
+        room6PostBattleShownRef.current = bWon.has(6);
+        room7PostBattleShownRef.current = bWon.has(7);
+        room5WestUnlockShownRef.current = cleared.has(5);
+        room62NorthUnlockShownRef.current = cleared.has(62);
         setVisited(vis);
         setHasKey(hk); hasKeyRef.current = hk;
         setHasRoom62Key(hk62); hasRoom62KeyRef.current = hk62;
@@ -290,6 +339,7 @@ function App() {
                 fadePercent,
             }),
         });
+        setUnsavedChanges(false);
         setSaveConfirm(true);
         setTimeout(() => setSaveConfirm(false), 2000);
     };
@@ -297,13 +347,18 @@ function App() {
     const handleBattleEnd = (won: boolean) => {
         setIsBattling(false);
         isBattlingRef.current = false;
-        if (!won) loadFromSave(activeSlot);
+        if (won) setUnsavedChanges(true);
+        else loadFromSave(activeSlot);
     };
 
     const handleNewGame = (slotId: number) => {
         setSaveMenuOpen(false);
         setActiveSlot(slotId);
-        setCurrentLine(0);
+        setPhase('intro');
+    };
+
+    const handleIntroComplete = () => {
+        setCurrentLine(5);
         setVisibleChars(0);
         setDialogueDismissed(false);
         isDialogueCompleteRef.current = false;
@@ -323,14 +378,21 @@ function App() {
         setSaveSlots(res.ok ? await res.json() : []);
     };
 
-    const handleReturnToTitle = async () => {
-        await saveGame();
+    const goToTitle = async () => {
         const res = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
         const data = res.ok ? await res.json() : [];
         setSaveSlots(Array.isArray(data) ? data : []);
         setShowEnding(false);
         setShowEndingButton(false);
+        setSaveMenuOpen(false);
+        setReturnConfirm(false);
+        setUnsavedChanges(false);
         setPhase('title');
+    };
+
+    const handleReturnToTitle = async () => {
+        await saveGame();
+        await goToTitle();
     };
 
     const handleCopySave = async (fromId: number, toId: number) => {
@@ -509,6 +571,7 @@ function App() {
             }
 
             setRoomID(nextRoom);
+            setUnsavedChanges(true);
             setFadePercent(prev => Math.max(0, prev - 2));
             setTempDialogue(null);
 
@@ -589,10 +652,24 @@ function App() {
             let dx = 0, dy = 0;
             let dir: string | null = null;
 
-            if (keys.has('ArrowUp'))    { dy -= SPEED; dir = 'north'; }
-            if (keys.has('ArrowDown'))  { dy += SPEED; dir = 'south'; }
-            if (keys.has('ArrowLeft'))  { dx -= SPEED; dir = 'west'; }
-            if (keys.has('ArrowRight')) { dx += SPEED; dir = 'east'; }
+            const up    = keys.has('ArrowUp');
+            const down  = keys.has('ArrowDown');
+            const left  = keys.has('ArrowLeft');
+            const right = keys.has('ArrowRight');
+
+            if (up)    dy -= SPEED;
+            if (down)  dy += SPEED;
+            if (left)  dx -= SPEED;
+            if (right) dx += SPEED;
+
+            if      (up && right) dir = 'northeast';
+            else if (up && left)  dir = 'northwest';
+            else if (down && right) dir = 'southeast';
+            else if (down && left)  dir = 'southwest';
+            else if (up)    dir = 'north';
+            else if (down)  dir = 'south';
+            else if (right) dir = 'east';
+            else if (left)  dir = 'west';
 
             if (dir) setPlayerDirection(dir);
 
@@ -729,11 +806,11 @@ function App() {
     useEffect(() => {
         const checkSaves = async () => {
             const res = await fetch(`http://localhost:8080/api/save?deviceId=${deviceIdRef.current}`);
-            if (!res.ok) { setPhase('game'); return; }
+            if (!res.ok) { setPhase('intro'); return; }
             const data = await res.json();
             const saves = Array.isArray(data) ? data : [];
             if (saves.length === 0) {
-                setPhase('game');
+                setPhase('intro');
             } else {
                 setSaveSlots(saves);
                 setPhase('title');
@@ -745,6 +822,78 @@ function App() {
     useEffect(() => {
         if (fadePercent <= 0) setHasFaded(true);
     }, [fadePercent]);
+
+    useEffect(() => {
+        if (!hasFaded) return;
+        setFadedAtRoom7(roomIDRef.current === 7);
+        setFadePhase('heading');
+        setFadeLine(0);
+        setFadeChars(0);
+        const t = setTimeout(() => setFadePhase('dialogue'), 1500);
+        return () => clearTimeout(t);
+    }, [hasFaded]);
+
+    useEffect(() => {
+        if (fadePhase !== 'dialogue') return;
+        const interval = setInterval(() => {
+            setFadeChars(prev => prev >= fadeDialogue[fadeLine].length ? prev : prev + 1);
+        }, 40);
+        return () => clearInterval(interval);
+    }, [fadePhase, fadeLine]);
+
+    useEffect(() => {
+        if (fadePhase !== 'dialogue' && fadePhase !== 'done') return;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key.toLowerCase() !== 'z') return;
+            if (fadePhaseRef.current === 'done') { loadFromSave(activeSlot, 10); return; }
+            const line = fadeLineRef.current;
+            const chars = fadeCharsRef.current;
+            if (chars < fadeDialogue[line].length) return;
+            if (line < fadeDialogue.length - 1) {
+                setFadeLine(line + 1);
+                setFadeChars(0);
+            } else {
+                setFadePhase('done');
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [fadePhase, fadedAtRoom7]);
+
+    useEffect(() => {
+        if (!saveMenuOpen) setReturnConfirm(false);
+    }, [saveMenuOpen]);
+
+    useEffect(() => {
+        setSaveMenuCursor(0);
+    }, [returnConfirm, saveMenuOpen]);
+
+    useEffect(() => {
+        if (!saveMenuOpen) return;
+        const optionCount = 3;
+        const handler = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
+                e.preventDefault();
+                setSaveMenuCursor(prev => (prev - 1 + optionCount) % optionCount);
+            } else if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
+                e.preventDefault();
+                setSaveMenuCursor(prev => (prev + 1) % optionCount);
+            } else if (e.key.toLowerCase() === 'z') {
+                const cursor = saveMenuCursorRef.current;
+                if (!returnConfirm) {
+                    if (cursor === 0) saveGame();
+                    else if (cursor === 1) { if (unsavedChanges) setReturnConfirm(true); else goToTitle(); }
+                    else setSaveMenuOpen(false);
+                } else {
+                    if (cursor === 0) handleReturnToTitle();
+                    else if (cursor === 1) goToTitle();
+                    else setReturnConfirm(false);
+                }
+            }
+        };
+        window.addEventListener('keydown', handler);
+        return () => window.removeEventListener('keydown', handler);
+    }, [saveMenuOpen, returnConfirm, unsavedChanges]);
 
     useEffect(() => {
         if (!showEnding) return;
@@ -825,7 +974,21 @@ function App() {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (phaseRef.current !== 'game') return;
             if (event.key === 'Escape') {
-                if (!isBattlingRef.current) setSaveMenuOpen(prev => !prev);
+                if (!isBattlingRef.current && isDialogueCompleteRef.current) setSaveMenuOpen(prev => !prev);
+                return;
+            }
+
+            if (hasFadedRef.current) {
+                return;
+            }
+
+            if (showEndingRef.current) {
+                if (event.key.toLowerCase() === 'z' && showEndingButtonRef.current) handleReturnToTitle();
+                return;
+            }
+
+            if (saveMenuOpenRef.current) {
+                event.preventDefault();
                 return;
             }
 
@@ -922,6 +1085,10 @@ function App() {
 
     if (phase === 'loading') return null;
 
+    if (phase === 'intro') {
+        return <Intro dialogue={introDialogue} onDone={handleIntroComplete} />;
+    }
+
     if (phase === 'credits') {
         return <Credits onBack={() => setPhase('title')} />;
     }
@@ -986,12 +1153,26 @@ function App() {
             </div>
 
             {hasFaded && (
-                <div className="save-overlay">
-                    <div className="save-menu" style={{ textAlign: 'center' }}>
-                        <p className="save-menu-title">YOU HAVE FADED AWAY</p>
-                        <p className="save-menu-stat" style={{ marginBottom: '24px' }}>Your presence in this world has dissolved.</p>
-                        <button onClick={() => loadFromSave(activeSlot)}>Respawn</button>
-                    </div>
+                <div className="gameover-overlay">
+                    {fadePhase !== null && (
+                        <h1 className="gameover-heading">You have faded.</h1>
+                    )}
+                    {(fadePhase === 'dialogue' || fadePhase === 'done') && (
+                        <div className="gameover-dialogue-box">
+                            <p className="gameover-dialogue-text">
+                                {fadeDialogue[fadeLine].substring(0, fadeChars)}
+                            </p>
+                            {fadePhase === 'dialogue' && fadeChars >= fadeDialogue[fadeLine].length && (
+                                <p className="gameover-hint">Z: Next</p>
+                            )}
+                        </div>
+                    )}
+                    {fadePhase === 'done' && (
+                        <>
+                            <button onClick={() => loadFromSave(activeSlot, 10)}>Go back</button>
+                            <p style={{ fontSize: '11px', color: '#555', marginTop: '-20px' }}>Z: Go back</p>
+                        </>
+                    )}
                 </div>
             )}
 
@@ -1000,7 +1181,10 @@ function App() {
                     <div className="ending-content">
                         <p className="ending-text">You win?</p>
                         {showEndingButton && (
-                            <button className="ending-button" onClick={handleReturnToTitle}>Return to Title</button>
+                            <>
+                                <button className="ending-button" onClick={handleReturnToTitle}>Return to Title</button>
+                                <p style={{ fontSize: '11px', color: '#555', marginTop: '10px', opacity: 0, animation: 'fadeInText 0.6s ease-in 0.1s forwards' }}>Z: Continue</p>
+                            </>
                         )}
                     </div>
                 </div>
@@ -1009,15 +1193,30 @@ function App() {
             {saveMenuOpen && (
                 <div className="save-overlay">
                     <div className="save-menu">
-                        <p className="save-menu-title">— SAVE —</p>
-                        <p className="save-menu-location">* {roomNames[roomID] ?? 'Unknown'}</p>
-                        <p className="save-menu-stat">FADE &nbsp;&nbsp;{fadePercent}%</p>
-                        <p className="save-menu-stat">ROOMS &nbsp;{visited.size} visited</p>
-                        <div className="save-menu-buttons">
-                            <button onClick={saveGame}>Save</button>
-                            <button onClick={() => setSaveMenuOpen(false)}>Return</button>
-                        </div>
-                        {saveConfirm && <p className="save-confirm">* Game saved.</p>}
+                        {!returnConfirm ? (
+                            <>
+                                <p className="save-menu-title">— SAVE —</p>
+                                <p className="save-menu-location">* {roomNames[roomID] ?? 'Unknown'}</p>
+                                <p className="save-menu-stat">FADE &nbsp;&nbsp;{fadePercent}%</p>
+                                <p className="save-menu-stat">ROOMS &nbsp;{visited.size} visited</p>
+                                <div className="save-menu-buttons">
+                                    <button onClick={saveGame} className={saveMenuCursor === 0 ? 'menu-selected' : ''}>Save</button>
+                                    <button onClick={() => { if (unsavedChanges) setReturnConfirm(true); else goToTitle(); }} className={saveMenuCursor === 1 ? 'menu-selected' : ''}>Return to Title</button>
+                                    <button onClick={() => setSaveMenuOpen(false)} className={saveMenuCursor === 2 ? 'menu-selected' : ''}>Close</button>
+                                </div>
+                                {saveConfirm && <p className="save-confirm">* Game saved.</p>}
+                            </>
+                        ) : (
+                            <>
+                                <p className="save-menu-title">— RETURN TO TITLE —</p>
+                                <p className="save-menu-stat" style={{ marginBottom: '12px' }}>You have unsaved progress.</p>
+                                <div className="save-menu-buttons">
+                                    <button onClick={handleReturnToTitle} className={saveMenuCursor === 0 ? 'menu-selected' : ''}>Save & Return</button>
+                                    <button onClick={goToTitle} className={saveMenuCursor === 1 ? 'menu-selected' : ''}>Return Anyway</button>
+                                    <button onClick={() => setReturnConfirm(false)} className={saveMenuCursor === 2 ? 'menu-selected' : ''}>Cancel</button>
+                                </div>
+                            </>
+                        )}
                     </div>
                 </div>
             )}

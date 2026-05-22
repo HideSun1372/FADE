@@ -37,14 +37,17 @@ type Props = {
     roomID: number;
     onPhaseEnd: (damageTaken: number) => void;
     onDamage?: (dmg: number) => void;
+    frozen?: boolean;
 };
 
-export default function DodgePhase({ roomID, onPhaseEnd, onDamage }: Props) {
+export default function DodgePhase({ roomID, onPhaseEnd, onDamage, frozen }: Props) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const onPhaseEndRef = useRef(onPhaseEnd);
     onPhaseEndRef.current = onPhaseEnd;
     const onDamageRef = useRef(onDamage);
     onDamageRef.current = onDamage;
+    const frozenRef = useRef(frozen ?? false);
+    frozenRef.current = frozen ?? false;
 
     useEffect(() => {
         const canvas = canvasRef.current;
@@ -133,6 +136,7 @@ export default function DodgePhase({ roomID, onPhaseEnd, onDamage }: Props) {
         }
 
         function loop(now: number) {
+            if (frozenRef.current) return;
             const elapsed = now - startTime;
             if (elapsed >= PHASE_DURATION && !ended) {
                 ended = true;
