@@ -3,7 +3,7 @@ WORKDIR /frontend
 COPY frontend/package*.json ./
 RUN npm ci
 COPY frontend/ ./
-RUN npm run build
+RUN npx vite build --outDir ./dist
 
 FROM eclipse-temurin:17-jdk AS backend-builder
 WORKDIR /backend
