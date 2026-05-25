@@ -59,7 +59,7 @@ cd backend
 ./gradlew bootRun
 ```
 
-Runs on `http://localhost:8080`. Requires a PostgreSQL database. Configure the connection in `backend/src/main/resources/application.properties` or via environment variables:
+Runs on `a Render backend`. Requires a PostgreSQL database. Configure the connection in `backend/src/main/resources/application.properties` or via environment variables:
 
 | Variable | Purpose |
 |---|---|
