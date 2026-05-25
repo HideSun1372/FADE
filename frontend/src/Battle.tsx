@@ -100,7 +100,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
 
     useEffect(() => {
         const fetchEnemy = async () => {
-            const response = await fetch(`http://localhost:8080/api/enemy?EnemyID=${roomID}`);
+            const response = await fetch(`/api/enemy?EnemyID=${roomID}`);
             const text = await response.text();
             const parsed = JSON.parse(text);
             setEnemy(parsed);
