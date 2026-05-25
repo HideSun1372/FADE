@@ -365,6 +365,29 @@ function App() {
     };
 
     const handleNewGame = (slotId: number) => {
+        setRoomID(0); roomIDRef.current = 0;
+        setShowEnding(false); setShowEndingButton(false);
+        setClearedRooms(new Set()); clearedRoomsRef.current = new Set();
+        setBattlesWon(new Set()); battlesWonRef.current = new Set();
+        setVisited(new Set([0]));
+        setHasKey(false); hasKeyRef.current = false;
+        setHasRoom62Key(false); hasRoom62KeyRef.current = false;
+        setNorthDoorUnlocked(false); northDoorUnlockedRef.current = false;
+        setFadePercent(100);
+        setWaterAmount(0);
+        setHasFaded(false); setFadePhase(null); setFadedAtRoom7(false);
+        setPlayerX(50); playerXRef.current = 50;
+        setPlayerY(50); playerYRef.current = 50;
+        setPlayerDirection('south');
+        setEnemyX(50); enemyXRef.current = 50;
+        setEnemyY(50); enemyYRef.current = 50;
+        setEnemyAggravated(false); enemyAggravatedRef.current = false;
+        room22PostBattleShownRef.current = false;
+        room4PostBattleShownRef.current = false;
+        room5WestUnlockShownRef.current = false;
+        room6PostBattleShownRef.current = false;
+        room7PostBattleShownRef.current = false;
+        room62NorthUnlockShownRef.current = false;
         setSaveMenuOpen(false);
         setActiveSlot(slotId);
         setPhase('intro');
