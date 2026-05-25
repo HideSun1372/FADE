@@ -52,7 +52,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     const [currentPlayerHP, setCurrentPlayerHP] = useState(100);
     const [playerWin, setPlayerWin] = useState(false);
     const [enemyWin, setEnemyWin] = useState(false);
-    const [isDefending, setIsDefending] = useState(false);
+    const [, setIsDefending] = useState(false);
     const [showWinScreen, setShowWinScreen] = useState(false);
     const [showWinButton, setShowWinButton] = useState(false);
     const [gameOverPhase, setGameOverPhase] = useState<null | 'frozen' | 'black' | 'heading' | 'dialogue' | 'done'>(null);
@@ -285,7 +285,6 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     const handleAttack = () => {
         setIsEnemyTurn(true);
         let damage = getRandomDamage(20, 40);
-        if (roomID === 6) damage *= 2;
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
         if (newEnemyHP <= 0) {
@@ -305,7 +304,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     const handleSplashWater = () => {
         setIsEnemyTurn(true);
         setWaterAmount(prev => prev - 1);
-        const damage = getRandomDamage(50, 90);
+        const damage = getRandomDamage(20, 60);
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
         if (newEnemyHP <= 0) {

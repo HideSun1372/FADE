@@ -17,14 +17,14 @@ type PatternConfig = {
 
 const patterns: Record<number, PatternConfig> = {
     22: { spawnInterval: 1100, bulletsPerSpawn: 2, bulletSpeed: 1.7, spawnType: 'horizontal', damagePerHit: 5  },
-    32: { spawnInterval: 800,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
-    33: { spawnInterval: 800,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
-    41: { spawnInterval: 600,  bulletsPerSpawn: 4, bulletSpeed: 2.8, spawnType: 'rain',       damagePerHit: 8  },
-    4:  { spawnInterval: 450,  bulletsPerSpawn: 5, bulletSpeed: 3.4, spawnType: 'rain',       damagePerHit: 10 },
-    63: { spawnInterval: 420,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11 },
-    73: { spawnInterval: 550,  bulletsPerSpawn: 4, bulletSpeed: 2.6, spawnType: 'rain',       damagePerHit: 8  },
-    6:  { spawnInterval: 350,  bulletsPerSpawn: 6, bulletSpeed: 3.8, spawnType: 'aimed',      damagePerHit: 12 },
-    7:  { spawnInterval: 240,  bulletsPerSpawn: 7, bulletSpeed: 4.5, spawnType: 'rain',       damagePerHit: 14 },
+    32: { spawnInterval: 950,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
+    33: { spawnInterval: 875,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
+    41: { spawnInterval: 750,  bulletsPerSpawn: 4, bulletSpeed: 2.8, spawnType: 'rain',       damagePerHit: 8  },
+    4:  { spawnInterval: 600,  bulletsPerSpawn: 5, bulletSpeed: 3.4, spawnType: 'rain',       damagePerHit: 10 },
+    63: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11 },
+    73: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11  },
+    6:  { spawnInterval: 460,  bulletsPerSpawn: 6, bulletSpeed: 3.8, spawnType: 'aimed',      damagePerHit: 12 },
+    7:  { spawnInterval: 320,  bulletsPerSpawn: 7, bulletSpeed: 4.5, spawnType: 'rain',       damagePerHit: 14 },
 };
 
 const PHASE_DURATION = 5000;

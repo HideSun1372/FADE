@@ -23,7 +23,7 @@ const roomDoors: Record<number, Set<Directions>> = {
     4:  new Set(['NORTH', 'EAST']),
     5:  new Set(['SOUTH', 'EAST', 'WEST']),
     6:  new Set(['SOUTH', 'WEST']),
-    7:  new Set(['EAST']),
+    7:  new Set(['EAST', 'NORTH']),
     11: new Set(['WEST']),
     21: new Set(['SOUTH', 'WEST']),
     22: new Set(['EAST']),
@@ -184,6 +184,7 @@ function App() {
         73: 'The Dead End',
         74: 'The Last Water',
         75: "The King's Approach",
+        99: 'You Win?',
     };
 
     const allDialogue: Record<number, string[]> = {
@@ -217,7 +218,7 @@ function App() {
         "You are fading away.",
         "I know it sounds crazy, but you have to trust me.",
         "I will be your guide on your new adventure.",
-        "Now, you may thinking. What journey is this about?",
+        "Now, you might be thinking. What journey is this about?",
         "Well, since you're fading away anyways, why not try to find the ultimate treasure of this world?",
         "This shall be a tedious journey, but I'm sure you could handle it!",
         "I will reveal more information as you continue on your journey.",
@@ -231,7 +232,7 @@ function App() {
         4: { description: "As you continue walking through the volcanic wastelands, you begin to feel a sense that someone is watching you.", parentRoom: null },
         5: { description: "After defeating the great boss of the volcanic wastelands, you take a break under the shade of a seemingly misplaced tree.", parentRoom: null },
         6: { description: "You enter a dungeon to face off against the ruler of this realm and find the final treasure of this mysterious land.", parentRoom: null },
-        7: { description: "What a plot twist. This is it. The final battle of this realm. Are you going to fail or are you going to come out on top after all the efforts you took to get here?", parentRoom: null },
+        7: { description: "What a plot twist. This is it. Are you going to fail or are you going to come out on top after all the efforts you took to get here?", parentRoom: null },
         11: { description: "Woah! There's a key here!", parentRoom: 0 },
         21: { description: "Nothing here, progress some more.", parentRoom: null },
         22: { description: "Woah! A goblin! Where did this guy come from?", parentRoom: 1 },
@@ -304,6 +305,8 @@ function App() {
         setWaterAmount(water);
         setFadePercent(fade);
         setHasFaded(false);
+        setFadePhase(null);
+        fadePhaseRef.current = null;
         setTempDialogue(null);
         setIsBattling(false); isBattlingRef.current = false;
         isRoomTransitioningRef.current = false;
@@ -369,6 +372,7 @@ function App() {
         setSaveMenuOpen(false);
         setActiveSlot(slotId);
         await loadFromSave(slotId);
+        if (roomIDRef.current === 99) setShowEnding(true);
         setPhase('game');
     };
 
@@ -411,7 +415,7 @@ function App() {
         }
     };
 
-    const activeDialogue = tempDialogue ?? allDialogue[roomID];
+    const activeDialogue = tempDialogue ?? allDialogue[roomID] ?? [];
     const activeDialogueRef = useRef<string[]>(activeDialogue);
     activeDialogueRef.current = activeDialogue;
 
@@ -544,8 +548,10 @@ function App() {
                 return;
             }
 
-            if (roomID === 7 && direction === 'EAST' && battlesWonRef.current.has(7)) {
+            if (roomID === 7 && direction === 'NORTH' && battlesWonRef.current.has(7)) {
                 isRoomTransitioningRef.current = false;
+                setRoomID(99);
+                roomIDRef.current = 99;
                 setShowEnding(true);
                 return;
             }
@@ -572,7 +578,7 @@ function App() {
 
             setRoomID(nextRoom);
             setUnsavedChanges(true);
-            setFadePercent(prev => Math.max(0, prev - 2));
+            if (!battlesWonRef.current.has(7)) setFadePercent(prev => Math.max(0, prev - 2));
             setTempDialogue(null);
 
             if (battleRooms.has(nextRoom) && !battlesWonRef.current.has(nextRoom)) {
@@ -897,6 +903,7 @@ function App() {
 
     useEffect(() => {
         if (!showEnding) return;
+        saveGame();
         const t = setTimeout(() => setShowEndingButton(true), 3500);
         return () => clearTimeout(t);
     }, [showEnding]);
@@ -909,8 +916,8 @@ function App() {
     }, [dialogueDismissed, roomID, battlesWon, isBattling]);
 
     useEffect(() => {
-        if (currentLine >= activeDialogue.length) {
-            const lastLine = Math.max(0, activeDialogue.length - 1);
+        if (currentLine >= activeDialogue?.length) {
+            const lastLine = Math.max(0, activeDialogue?.length - 1);
             setCurrentLine(lastLine);
             setVisibleChars(activeDialogue[lastLine]?.length ?? 0);
         }
@@ -1128,7 +1135,7 @@ function App() {
             <GameScene
                 roomID={roomID}
                 playerDirection={playerDirection}
-                description={rooms[roomID].description}
+                description={rooms[roomID]?.description ?? ''}
                 playerX={playerX}
                 playerY={playerY}
                 hasKey={hasKey}

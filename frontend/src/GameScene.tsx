@@ -158,6 +158,7 @@ export default function GameScene({ roomID, playerDirection, description, player
 
             {roomID === 7 && <>
                 <div className={`door door-east${battleWon ? '' : ' door-locked'}`}></div>
+                {battleWon && <div className="door door-north"></div>}
             </>}
 
             {roomID === 71 && <>

@@ -35,6 +35,15 @@ export default function Credits({ onBack }: { onBack: () => void }) {
                     <p className="credits-name">All visual styles are generated with AI</p>
                 </div>
 
+                <div className="credits-section">
+                    <p className="credits-role">TESTERS</p>
+                    <p className="credits-name">Caleb Tripp</p>
+                    <p className="credits-name">Manolo Jacob Calo</p>
+                    <p className="credits-name">Lochan Pillarisetty</p>
+                    <p className="credits-name">Anish Panigrahi</p>
+                    <p className="credits-name">Ranveer Sharma</p>
+                </div>
+
                 <div className="credits-divider" />
 
                 <div className="credits-section">

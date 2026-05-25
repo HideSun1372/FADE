@@ -1,0 +1,44 @@
+{
+  "name": "fade",
+  "version": "1.0.0",
+  "description": "Faint Aura - Development Experiment",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dist": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.1.8"
+  },
+  "build": {
+    "appId": "com.hidesun1372.fade",
+    "productName": "FADE",
+    "directories": {
+      "output": "dist"
+    },
+    "win": {
+      "target": "nsis",
+      "icon": "favicon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "installerIcon": "favicon.ico",
+      "uninstallerIcon": "favicon.ico"
+    },
+    "extraResources": [
+      { "from": "resources/app.jar", "to": "app.jar" },
+      { "from": "resources/config.json", "to": "config.json" },
+      { "from": "jre", "to": "jre", "filter": ["**/*"] }
+    ],
+    "files": [
+      "main.js",
+      "loading.html",
+
+      "!jre/**",
+      "!resources/**",
+      "!dist/**"
+    ]
+  }
+}
