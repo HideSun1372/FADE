@@ -29,21 +29,16 @@ app.whenReady().then(() => {
 
   mainWindow.loadFile('loading.html');
   mainWindow.on('page-title-updated', (e) => e.preventDefault());
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    if (input.key === 'F12') mainWindow.webContents.toggleDevTools();
-  });
+
 
   setTimeout(() => {
     if (mainWindow) mainWindow.webContents.executeJavaScript(
       'document.getElementById("error-msg").style.display = "block"'
     );
-  }, 30000);
+  }, 180000);
 
   waitForBackend(2000, () => {
-    if (mainWindow) {
-      mainWindow.loadURL(BACKEND_URL);
-      mainWindow.webContents.openDevTools();
-    }
+    if (mainWindow) mainWindow.loadURL(BACKEND_URL);
   });
 
   mainWindow.on('closed', () => {
