@@ -30,6 +30,8 @@
     "files": [
       "main.js",
       "loading.html",
+      "mus_start.mp3",
+      "mus_startlong.mp3",
       "!dist/**"
     ]
   }
