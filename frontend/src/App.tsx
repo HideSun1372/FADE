@@ -1096,6 +1096,7 @@ function App() {
         isBattling && battleLoseScreen ? null :
         hasFaded ? 'mus_death' :
         isBattling && battleWinScreen ? 'mus_win' :
+        isBattling && roomID === 4 ? 'mus_volcanicmaster' :
         isBattling && roomID === 6 ? 'mus_king' :
         isBattling && roomID === 7 ? 'mus_figure' :
         isBattling ? 'mus_battle' :
