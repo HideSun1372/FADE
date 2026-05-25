@@ -44,6 +44,17 @@ export default function Credits({ onBack }: { onBack: () => void }) {
                     <p className="credits-name">Ranveer Sharma</p>
                 </div>
 
+                <div className="credits-section">
+                    <p className="credits-role">Music</p>
+                    <p className="credits-name">Toby Fox - Faint Courage (Game Over)</p>
+                    <p className="credits-name">Toby Fox - ASGORE</p>
+                    <p className="credits-name">Toby Fox - Faint Glow</p>
+                    <p className="credits-name">Toby Fox - Rude Buster</p>
+                    <p className="credits-name">Toby Fox - THE WORLD REVOLVING</p>
+                    <p className="credits-name">Toby Fox - Home</p>
+                    <p className="credits-name">Toby Fox - Home (Music Box)</p>
+                </div>
+
                 <div className="credits-divider" />
 
                 <div className="credits-section">
