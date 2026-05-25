@@ -43,5 +43,21 @@
   <h1>FADE</h1>
   <p>The Render backend is currently cold-starting, please hold on... (Up to 3 minutes)</p>
   <p id="error-msg">The app seems to be having trouble connecting. Are you connected to the internet?</p>
+  <script>
+    const start = new Audio('mus_start.mp3');
+    start.volume = 0.7;
+    start.play();
+
+    setTimeout(() => {
+      const pos = start.currentTime;
+      start.pause();
+
+      const long = new Audio('mus_startlong.mp3');
+      long.volume = 0.7;
+      long.loop = true;
+      long.currentTime = pos;
+      long.play();
+    }, 180000);
+  </script>
 </body>
 </html>
