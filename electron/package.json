@@ -27,17 +27,8 @@
       "installerIcon": "favicon.ico",
       "uninstallerIcon": "favicon.ico"
     },
-    "extraResources": [
-      { "from": "resources/app.jar", "to": "app.jar" },
-      { "from": "resources/config.json", "to": "config.json" },
-      { "from": "jre", "to": "jre", "filter": ["**/*"] }
-    ],
     "files": [
       "main.js",
-      "loading.html",
-
-      "!jre/**",
-      "!resources/**",
       "!dist/**"
     ]
   }
