@@ -1,5 +1,7 @@
 import { useEffect, useState, useRef } from 'react'
 import './App.css'
+import { useMusic } from './useMusic'
+import { playSound } from './playSound'
 import type { Directions } from './types';
 import Battle from './Battle'
 import GameScene from './GameScene'
@@ -323,7 +325,7 @@ function App() {
         }
     };
 
-    const saveGame = async () => {
+    const saveGame = async (silent = false) => {
         await fetch(`/api/save/${activeSlot}?deviceId=${deviceIdRef.current}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -342,14 +344,22 @@ function App() {
                 fadePercent,
             }),
         });
+        if (!silent) playSound('snd_save');
         setUnsavedChanges(false);
         setSaveConfirm(true);
         setTimeout(() => setSaveConfirm(false), 2000);
     };
 
+    const [battleWinScreen, setBattleWinScreen] = useState(false);
+    const [battleLoseScreen, setBattleLoseScreen] = useState(false);
+    const [battleGameOver, setBattleGameOver] = useState(false);
+
     const handleBattleEnd = (won: boolean) => {
         setIsBattling(false);
         isBattlingRef.current = false;
+        setBattleWinScreen(false);
+        setBattleLoseScreen(false);
+        setBattleGameOver(false);
         if (won) setUnsavedChanges(true);
         else loadFromSave(activeSlot);
     };
@@ -395,7 +405,7 @@ function App() {
     };
 
     const handleReturnToTitle = async () => {
-        await saveGame();
+        await saveGame(showEndingRef.current);
         await goToTitle();
     };
 
@@ -903,7 +913,8 @@ function App() {
 
     useEffect(() => {
         if (!showEnding) return;
-        saveGame();
+        saveGame(true);
+        playSound('snd_youwin');
         const t = setTimeout(() => setShowEndingButton(true), 3500);
         return () => clearTimeout(t);
     }, [showEnding]);
@@ -1078,6 +1089,20 @@ function App() {
         };
     }, [currentLine, visibleChars, roomID, xHeld, tempDialogue, dialogueDismissed]);
 
+    const musicTrack =
+        (phase === 'title' || phase === 'credits') ? 'mus_title' :
+        phase === 'intro' ? 'mus_intro' :
+        isBattling && battleGameOver ? 'mus_death' :
+        isBattling && battleLoseScreen ? null :
+        hasFaded ? 'mus_death' :
+        isBattling && battleWinScreen ? 'mus_win' :
+        isBattling && roomID === 6 ? 'mus_king' :
+        isBattling && roomID === 7 ? 'mus_figure' :
+        isBattling ? 'mus_battle' :
+        null
+
+    useMusic(musicTrack)
+
     const saveSlotsList = Array.isArray(saveSlots) ? saveSlots : [];
     const slotInfos = [1, 2, 3].map(id => {
         const save = saveSlotsList.find((s: any) => s.slotId === id);
@@ -1114,6 +1139,9 @@ function App() {
         return <Battle
             roomID={roomID}
             onBattleEnd={handleBattleEnd}
+            onWinScreen={() => setBattleWinScreen(true)}
+            onLoseScreen={() => setBattleLoseScreen(true)}
+            onGameOverScreen={() => setBattleGameOver(true)}
             setBattlesWon={setBattlesWon}
             waterAmount={waterAmount}
             setWaterAmount={setWaterAmount}

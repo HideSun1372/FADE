@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react"
 import DodgePhase from "./DodgePhase"
+import { playSound } from "./playSound"
 
 const tutorialDialogue = [
     "Welcome to your first battle! Let me explain how this works.",
@@ -37,7 +38,7 @@ const backgrounds: Record<number, string> = {
     75: 'radial-gradient(ellipse at 50% 25%, #1c0800 0%, #0f0400 55%, #050200 100%)',
 };
 
-export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount, setWaterAmount, playerDirection}) {
+export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, onGameOverScreen, setBattlesWon, waterAmount, setWaterAmount, playerDirection}) {
 
     const room7Taunts = [
         "You shall not escape my journey to rule over this land.",
@@ -115,7 +116,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
 
     useEffect(() => {
         if (!playerWin) return;
-        const t1 = setTimeout(() => setShowWinScreen(true), 1000);
+        const t1 = setTimeout(() => { setShowWinScreen(true); onWinScreen(); }, 1000);
         const t2 = setTimeout(() => setShowWinButton(true), 2500);
         return () => { clearTimeout(t1); clearTimeout(t2); };
     }, [playerWin]);
@@ -123,7 +124,8 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     useEffect(() => {
         if (!enemyWin) return;
         setGameOverPhase('frozen');
-        const t1 = setTimeout(() => setGameOverPhase('black'), 3000);
+        onLoseScreen();
+        const t1 = setTimeout(() => { setGameOverPhase('black'); onGameOverScreen(); }, 3000);
         const t2 = setTimeout(() => setGameOverPhase('heading'), 5000);
         const t3 = setTimeout(() => setGameOverPhase('dialogue'), 6500);
         return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3); };
@@ -266,6 +268,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     }, [gameOverPhase]);
 
     const handleDodgeDamage = (dmg: number) => {
+        playSound('snd_damage');
         const d = pendingDefendRef.current ? Math.floor(dmg / 2) : dmg;
         const newHP = Math.max(0, currentPlayerHPRef.current - d);
         currentPlayerHPRef.current = newHP;
@@ -284,6 +287,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
 
     const handleAttack = () => {
         setIsEnemyTurn(true);
+        playSound('snd_attack');
         let damage = getRandomDamage(20, 40);
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
@@ -295,6 +299,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
     };
 
     const handleDefend = () => {
+        playSound('snd_defend');
         setIsDefending(true);
         pendingDefendRef.current = true;
         setIsEnemyTurn(true);
@@ -303,6 +308,7 @@ export default function Battle({roomID, onBattleEnd, setBattlesWon, waterAmount,
 
     const handleSplashWater = () => {
         setIsEnemyTurn(true);
+        playSound('snd_splashwater');
         setWaterAmount(prev => prev - 1);
         const damage = getRandomDamage(20, 60);
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
