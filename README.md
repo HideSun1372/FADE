@@ -1,4 +1,4 @@
-# FADE
+# Faint Aura - Development Experiment
 
 A narrative-driven dungeon crawler with a twist. You play as a character slowly fading from existence — explore 7 interconnected rooms and 18 subrooms, fight turn-based battles with a dodge minigame, collect items, unlock doors, and uncover a story about manipulation and freedom.
 
