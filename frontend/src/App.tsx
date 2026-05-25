@@ -992,7 +992,7 @@ function App() {
         const handleKeyDown = (event: KeyboardEvent) => {
             if (phaseRef.current !== 'game') return;
             if (event.key === 'Escape') {
-                if (!isBattlingRef.current && isDialogueCompleteRef.current) setSaveMenuOpen(prev => !prev);
+                if (!isBattlingRef.current && isDialogueCompleteRef.current && !enemyAggravatedRef.current) setSaveMenuOpen(prev => !prev);
                 return;
             }
 
@@ -1236,7 +1236,7 @@ function App() {
                                 <p className="save-menu-stat">FADE &nbsp;&nbsp;{fadePercent}%</p>
                                 <p className="save-menu-stat">ROOMS &nbsp;{visited.size} visited</p>
                                 <div className="save-menu-buttons">
-                                    <button onClick={saveGame} className={saveMenuCursor === 0 ? 'menu-selected' : ''}>Save</button>
+                                    <button onClick={() => saveGame()} className={saveMenuCursor === 0 ? 'menu-selected' : ''}>Save</button>
                                     <button onClick={() => { if (unsavedChanges) setReturnConfirm(true); else goToTitle(); }} className={saveMenuCursor === 1 ? 'menu-selected' : ''}>Return to Title</button>
                                     <button onClick={() => setSaveMenuOpen(false)} className={saveMenuCursor === 2 ? 'menu-selected' : ''}>Close</button>
                                 </div>
