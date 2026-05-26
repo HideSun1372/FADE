@@ -18,6 +18,9 @@ export const AUDIO_TRACKS = [
     { key: 'snd_youwin',       label: 'You Win',             category: 'Sound Effect', loop: false },
 ];
 
+const TOTAL_ITEMS = AUDIO_TRACKS.length + 1; // tracks + back button
+const BACK_IDX = AUDIO_TRACKS.length;
+
 interface UploadMusicProps {
     customAudio: Record<string, string>;
     onAudioChange: (key: string, url: string | null) => void;
@@ -32,19 +35,23 @@ export default function UploadMusic({ customAudio, onAudioChange, onBack }: Uplo
         const handleKeyDown = (e: KeyboardEvent) => {
             e.preventDefault();
             if (e.key === 'ArrowUp') {
-                setCursor(prev => (prev + AUDIO_TRACKS.length - 1) % AUDIO_TRACKS.length);
+                setCursor(prev => (prev + TOTAL_ITEMS - 1) % TOTAL_ITEMS);
             } else if (e.key === 'ArrowDown') {
-                setCursor(prev => (prev + 1) % AUDIO_TRACKS.length);
+                setCursor(prev => (prev + 1) % TOTAL_ITEMS);
             } else if (e.key.toLowerCase() === 'z') {
-                fileInputRefs.current[cursor]?.click();
-            } else if (e.key.toLowerCase() === 'c') {
-                const key = AUDIO_TRACKS[cursor].key;
-                if (customAudio[key]) {
-                    deleteAudioBlob(key).catch(() => {});
-                    onAudioChange(key, null);
+                if (cursor === BACK_IDX) {
+                    onBack();
+                } else {
+                    fileInputRefs.current[cursor]?.click();
                 }
-            } else if (e.key.toLowerCase() === 'x') {
-                onBack();
+            } else if (e.key.toLowerCase() === 'c') {
+                if (cursor !== BACK_IDX) {
+                    const key = AUDIO_TRACKS[cursor].key;
+                    if (customAudio[key]) {
+                        deleteAudioBlob(key).catch(() => {});
+                        onAudioChange(key, null);
+                    }
+                }
             }
         };
         window.addEventListener('keydown', handleKeyDown);
@@ -63,10 +70,13 @@ export default function UploadMusic({ customAudio, onAudioChange, onBack }: Uplo
     return (
         <div className="upload-music-screen">
             <h2 className="upload-music-title">Upload Music</h2>
-            <p className="upload-music-hint">▲▼: Select  ·  Z: Upload file  ·  C: Clear  ·  X: Back</p>
+            <p className="upload-music-hint">▲▼: Select  ·  Z: Confirm  ·  C: Clear</p>
             <div className="upload-track-list">
                 {AUDIO_TRACKS.map((track, i) => (
-                    <div key={track.key} className={`upload-track${cursor === i ? ' upload-track-selected' : ''}`}>
+                    <div
+                        key={track.key}
+                        className={`upload-track${cursor === i ? ' upload-track-selected' : ''}`}
+                    >
                         <span className="upload-track-category">[{track.category}]</span>
                         <span className="upload-track-label">{track.label}</span>
                         <span className={`upload-track-status${customAudio[track.key] ? ' upload-track-loaded' : ''}`}>
@@ -82,6 +92,7 @@ export default function UploadMusic({ customAudio, onAudioChange, onBack }: Uplo
                     </div>
                 ))}
             </div>
+            <div className={`credits-back-btn${cursor === BACK_IDX ? ' credits-back-btn-selected' : ''}`}>BACK</div>
         </div>
     );
 }
