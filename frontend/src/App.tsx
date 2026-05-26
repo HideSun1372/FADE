@@ -8,6 +8,8 @@ import GameScene from './GameScene'
 import TitleScreen from './TitleScreen'
 import Credits from './Credits'
 import Intro from './Intro'
+import UploadMusic from './UploadMusic'
+import { loadAllAudioBlobs } from './audioStorage'
 
 const SPEED = 0.45;
 const ENEMY_SPEED = 0.3;
@@ -88,7 +90,8 @@ function App() {
     const [fadedAtRoom7, setFadedAtRoom7] = useState(false);
     const [showEnding, setShowEnding] = useState(false);
     const [showEndingButton, setShowEndingButton] = useState(false);
-    const [phase, setPhase] = useState<'loading' | 'title' | 'intro' | 'game' | 'credits'>('loading');
+    const [phase, setPhase] = useState<'loading' | 'title' | 'intro' | 'game' | 'credits' | 'upload_music'>('loading');
+    const [customAudio, setCustomAudio] = useState<Record<string, string>>({});
     const [activeSlot, setActiveSlot] = useState(1);
     const [saveSlots, setSaveSlots] = useState<any[]>([]);
     const [unsavedChanges, setUnsavedChanges] = useState(false);
@@ -344,7 +347,7 @@ function App() {
                 fadePercent,
             }),
         });
-        if (!silent) playSound('snd_save');
+        if (!silent) playSound(customAudio['snd_save'] ?? null);
         setUnsavedChanges(false);
         setSaveConfirm(true);
         setTimeout(() => setSaveConfirm(false), 2000);
@@ -362,6 +365,18 @@ function App() {
         setBattleGameOver(false);
         if (won) setUnsavedChanges(true);
         else loadFromSave(activeSlot);
+    };
+
+    const handleAudioChange = (key: string, url: string | null) => {
+        setCustomAudio(prev => {
+            if (prev[key]) URL.revokeObjectURL(prev[key]);
+            if (url === null) {
+                const next = { ...prev };
+                delete next[key];
+                return next;
+            }
+            return { ...prev, [key]: url };
+        });
     };
 
     const handleNewGame = (slotId: number) => {
@@ -859,6 +874,10 @@ function App() {
     }, []);
 
     useEffect(() => {
+        loadAllAudioBlobs().then(setCustomAudio).catch(() => {});
+    }, []);
+
+    useEffect(() => {
         if (fadePercent <= 0) setHasFaded(true);
     }, [fadePercent]);
 
@@ -937,7 +956,7 @@ function App() {
     useEffect(() => {
         if (!showEnding) return;
         saveGame(true);
-        playSound('snd_youwin');
+        playSound(customAudio['snd_youwin'] ?? null);
         const t = setTimeout(() => setShowEndingButton(true), 3500);
         return () => clearTimeout(t);
     }, [showEnding]);
@@ -1112,8 +1131,8 @@ function App() {
         };
     }, [currentLine, visibleChars, roomID, xHeld, tempDialogue, dialogueDismissed]);
 
-    const musicTrack =
-        (phase === 'title' || phase === 'credits') ? 'mus_title' :
+    const musicTrackKey =
+        (phase === 'title' || phase === 'credits' || phase === 'upload_music') ? 'mus_title' :
         phase === 'intro' ? 'mus_intro' :
         isBattling && battleGameOver ? 'mus_death' :
         isBattling && battleLoseScreen ? null :
@@ -1125,7 +1144,8 @@ function App() {
         isBattling ? 'mus_battle' :
         null
 
-    useMusic(musicTrack)
+    const musicUrl = musicTrackKey ? (customAudio[musicTrackKey] ?? null) : null;
+    useMusic(musicUrl, musicTrackKey !== 'mus_win')
 
     const saveSlotsList = Array.isArray(saveSlots) ? saveSlots : [];
     const slotInfos = [1, 2, 3].map(id => {
@@ -1156,7 +1176,15 @@ function App() {
             onLoadGame={handleLoadGame}
             onDeleteSave={handleDeleteSave}
             onCopySave={handleCopySave}
-            onCredits={() => setPhase('credits')} />;
+            onCredits={() => setPhase('credits')}
+            onUploadMusic={() => setPhase('upload_music')} />;
+    }
+
+    if (phase === 'upload_music') {
+        return <UploadMusic
+            customAudio={customAudio}
+            onAudioChange={handleAudioChange}
+            onBack={() => setPhase('title')} />;
     }
 
     if (isBattling) {
@@ -1169,7 +1197,8 @@ function App() {
             setBattlesWon={setBattlesWon}
             waterAmount={waterAmount}
             setWaterAmount={setWaterAmount}
-            playerDirection={playerDirection} />;
+            playerDirection={playerDirection}
+            customAudio={customAudio} />;
     }
 
     return (

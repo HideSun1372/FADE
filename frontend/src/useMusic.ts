@@ -1,11 +1,11 @@
 import { useEffect } from 'react'
 
-export function useMusic(track: string | null) {
+export function useMusic(url: string | null, loop: boolean = true) {
     useEffect(() => {
-        if (!track) return
+        if (!url) return
 
-        const audio = new Audio(`/audio/${track}.mp3`)
-        audio.loop = track !== 'mus_win'
+        const audio = new Audio(url)
+        audio.loop = loop
         audio.volume = 0.7
 
         const onInteract = () => {
@@ -23,5 +23,5 @@ export function useMusic(track: string | null) {
             document.removeEventListener('keydown', onInteract)
             document.removeEventListener('click', onInteract)
         }
-    }, [track])
+    }, [url, loop])
 }

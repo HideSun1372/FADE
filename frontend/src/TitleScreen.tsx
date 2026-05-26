@@ -14,14 +14,15 @@ interface TitleScreenProps {
     onDeleteSave: (slotId: number) => void;
     onCopySave: (fromId: number, toId: number) => void;
     onCredits: () => void;
+    onUploadMusic: () => void;
 }
 
 type Mode = 'slots' | 'actions' | 'delete_confirm' | 'copy_target';
-type Focus = 'slots' | 'credits_btn';
+type Focus = 'slots' | 'credits_btn' | 'upload_music_btn';
 
 const ACTIONS = ['Load', 'Delete', 'Copy'];
 
-export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits }: TitleScreenProps) {
+export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits, onUploadMusic }: TitleScreenProps) {
     const [slotCursor, setSlotCursor] = useState(0);
     const [mode, setMode] = useState<Mode>('slots');
     const [actionCursor, setActionCursor] = useState(0);
@@ -53,8 +54,16 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
                 } else if (focus === 'credits_btn') {
                     if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'x') {
                         setFocus('slots');
+                    } else if (e.key === 'ArrowDown') {
+                        setFocus('upload_music_btn');
                     } else if (e.key.toLowerCase() === 'z') {
                         onCredits();
+                    }
+                } else if (focus === 'upload_music_btn') {
+                    if (e.key === 'ArrowUp' || e.key.toLowerCase() === 'x') {
+                        setFocus('credits_btn');
+                    } else if (e.key.toLowerCase() === 'z') {
+                        onUploadMusic();
                     }
                 }
             } else if (mode === 'actions') {
@@ -93,12 +102,15 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
 
         window.addEventListener('keydown', handleKeyDown);
         return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [mode, focus, slotCursor, actionCursor, copyCursor, slots, copyTargets, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits]);
+    }, [mode, focus, slotCursor, actionCursor, copyCursor, slots, copyTargets, onNewGame, onLoadGame, onDeleteSave, onCopySave, onCredits, onUploadMusic]);
 
     const renderPrompt = () => {
         if (mode === 'slots') {
             if (focus === 'credits_btn') {
-                return <p className="title-prompt">▲: Back  ·  Z: Open Credits</p>;
+                return <p className="title-prompt">▲: Back  ·  ▼: Upload Music  ·  Z: Open Credits</p>;
+            }
+            if (focus === 'upload_music_btn') {
+                return <p className="title-prompt">▲: Back  ·  Z: Upload Music</p>;
             }
             const slot = slots[slotCursor];
             return (
@@ -168,6 +180,9 @@ export default function TitleScreen({ slots, onNewGame, onLoadGame, onDeleteSave
             </div>
             <div className={`title-credits-btn${focus === 'credits_btn' ? ' title-credits-btn-selected' : ''}`}>
                 CREDITS
+            </div>
+            <div className={`title-credits-btn${focus === 'upload_music_btn' ? ' title-credits-btn-selected' : ''}`}>
+                UPLOAD MUSIC
             </div>
             <div className="title-prompt-area">
                 {renderPrompt()}

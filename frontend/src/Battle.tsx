@@ -38,7 +38,7 @@ const backgrounds: Record<number, string> = {
     75: 'radial-gradient(ellipse at 50% 25%, #1c0800 0%, #0f0400 55%, #050200 100%)',
 };
 
-export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, onGameOverScreen, setBattlesWon, waterAmount, setWaterAmount, playerDirection}) {
+export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, onGameOverScreen, setBattlesWon, waterAmount, setWaterAmount, playerDirection, customAudio = {}}) {
 
     const room7Taunts = [
         "You shall not escape my journey to rule over this land.",
@@ -268,7 +268,7 @@ export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, 
     }, [gameOverPhase]);
 
     const handleDodgeDamage = (dmg: number) => {
-        playSound('snd_damage');
+        playSound(customAudio['snd_damage'] ?? null);
         const d = pendingDefendRef.current ? Math.floor(dmg / 2) : dmg;
         const newHP = Math.max(0, currentPlayerHPRef.current - d);
         currentPlayerHPRef.current = newHP;
@@ -287,7 +287,7 @@ export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, 
 
     const handleAttack = () => {
         setIsEnemyTurn(true);
-        playSound('snd_attack');
+        playSound(customAudio['snd_attack'] ?? null);
         let damage = getRandomDamage(20, 40);
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
         setCurrentEnemyHP(newEnemyHP);
@@ -299,7 +299,7 @@ export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, 
     };
 
     const handleDefend = () => {
-        playSound('snd_defend');
+        playSound(customAudio['snd_defend'] ?? null);
         setIsDefending(true);
         pendingDefendRef.current = true;
         setIsEnemyTurn(true);
@@ -308,7 +308,7 @@ export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, 
 
     const handleSplashWater = () => {
         setIsEnemyTurn(true);
-        playSound('snd_splashwater');
+        playSound(customAudio['snd_splashwater'] ?? null);
         setWaterAmount(prev => prev - 1);
         const damage = getRandomDamage(20, 60);
         const newEnemyHP = Math.max(0, currentEnemyHPRef.current - damage);
