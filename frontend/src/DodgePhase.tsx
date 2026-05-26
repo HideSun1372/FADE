@@ -16,15 +16,15 @@ type PatternConfig = {
 };
 
 const patterns: Record<number, PatternConfig> = {
-    22: { spawnInterval: 1100, bulletsPerSpawn: 2, bulletSpeed: 1.7, spawnType: 'horizontal', damagePerHit: 5  },
-    32: { spawnInterval: 950,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
-    33: { spawnInterval: 875,  bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 7  },
-    41: { spawnInterval: 750,  bulletsPerSpawn: 4, bulletSpeed: 2.8, spawnType: 'rain',       damagePerHit: 8  },
-    4:  { spawnInterval: 600,  bulletsPerSpawn: 5, bulletSpeed: 3.4, spawnType: 'rain',       damagePerHit: 10 },
-    63: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11 },
-    73: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11  },
-    6:  { spawnInterval: 460,  bulletsPerSpawn: 6, bulletSpeed: 3.8, spawnType: 'rain',      damagePerHit: 12 },
-    7:  { spawnInterval: 300,  bulletsPerSpawn: 10, bulletSpeed: 5, spawnType: 'aimed',       damagePerHit: 14 },
+    22: { spawnInterval: 1030, bulletsPerSpawn: 3, bulletSpeed: 2.3, spawnType: 'horizontal', damagePerHit: 5  },
+    32: { spawnInterval: 950,  bulletsPerSpawn: 3, bulletSpeed: 2.8, spawnType: 'horizontal', damagePerHit: 7  },
+    33: { spawnInterval: 875,  bulletsPerSpawn: 3, bulletSpeed: 2.8, spawnType: 'horizontal', damagePerHit: 7  },
+    41: { spawnInterval: 750,  bulletsPerSpawn: 4, bulletSpeed: 3.4, spawnType: 'rain',       damagePerHit: 8  },
+    4:  { spawnInterval: 600,  bulletsPerSpawn: 6, bulletSpeed: 3.9, spawnType: 'rain',       damagePerHit: 10 },
+    63: { spawnInterval: 525,  bulletsPerSpawn: 5, bulletSpeed: 4.0, spawnType: 'aimed',      damagePerHit: 11 },
+    73: { spawnInterval: 525,  bulletsPerSpawn: 5, bulletSpeed: 4.0, spawnType: 'aimed',      damagePerHit: 11  },
+    6:  { spawnInterval: 340,  bulletsPerSpawn: 7, bulletSpeed: 4.7, spawnType: 'rain',      damagePerHit: 12 },
+    7:  { spawnInterval: 280,  bulletsPerSpawn: 9, bulletSpeed: 5.0, spawnType: 'aimed',       damagePerHit: 14 },
 };
 
 const PHASE_DURATION = 5000;
