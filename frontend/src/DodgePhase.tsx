@@ -23,8 +23,8 @@ const patterns: Record<number, PatternConfig> = {
     4:  { spawnInterval: 600,  bulletsPerSpawn: 5, bulletSpeed: 3.4, spawnType: 'rain',       damagePerHit: 10 },
     63: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11 },
     73: { spawnInterval: 525,  bulletsPerSpawn: 4, bulletSpeed: 3.0, spawnType: 'aimed',      damagePerHit: 11  },
-    6:  { spawnInterval: 460,  bulletsPerSpawn: 6, bulletSpeed: 3.8, spawnType: 'aimed',      damagePerHit: 12 },
-    7:  { spawnInterval: 320,  bulletsPerSpawn: 7, bulletSpeed: 4.5, spawnType: 'rain',       damagePerHit: 14 },
+    6:  { spawnInterval: 460,  bulletsPerSpawn: 6, bulletSpeed: 3.8, spawnType: 'rain',      damagePerHit: 12 },
+    7:  { spawnInterval: 300,  bulletsPerSpawn: 10, bulletSpeed: 5, spawnType: 'aimed',       damagePerHit: 14 },
 };
 
 const PHASE_DURATION = 5000;
