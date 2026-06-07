@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react"
 import DodgePhase from "./DodgePhase"
 import { playSound } from "./playSound"
+import { API_BASE } from './config'
 
 const tutorialDialogue = [
     "Welcome to your first battle! Let me explain how this works.",
@@ -101,7 +102,7 @@ export default function Battle({roomID, onBattleEnd, onWinScreen, onLoseScreen, 
 
     useEffect(() => {
         const fetchEnemy = async () => {
-            const response = await fetch(`/api/enemy?EnemyID=${roomID}`);
+            const response = await fetch(`${API_BASE}/api/enemy?EnemyID=${roomID}`);
             const text = await response.text();
             const parsed = JSON.parse(text);
             setEnemy(parsed);

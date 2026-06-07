@@ -10,6 +10,7 @@ import Credits from './Credits'
 import Intro from './Intro'
 import UploadMusic from './UploadMusic'
 import { loadAllAudioBlobs } from './audioStorage'
+import { API_BASE } from './config'
 
 const SPEED = 0.45;
 const ENEMY_SPEED = 0.3;
@@ -263,7 +264,7 @@ function App() {
     };
 
     const loadFromSave = async (slot: number, fadeBonus: number = 0) => {
-        const res = await fetch(`/api/save/${slot}?deviceId=${deviceIdRef.current}`);
+        const res = await fetch(`${API_BASE}/api/save/${slot}?deviceId=${deviceIdRef.current}`);
         let roomId = 0, px = 50, py = 50, dir = 'south';
         let cleared = new Set<number>(), bWon = new Set<number>(), vis = new Set<number>([0]);
         let hk = false, hk62 = false, ndu = false, water = 0, fade = 100;
@@ -284,7 +285,7 @@ function App() {
 
         if (fadeBonus > 0 && rawData) {
             fade = Math.min(100, fade + fadeBonus);
-            await fetch(`/api/save/${slot}?deviceId=${deviceIdRef.current}`, {
+            await fetch(`${API_BASE}/api/save/${slot}?deviceId=${deviceIdRef.current}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...rawData, fadePercent: fade }),
@@ -329,7 +330,7 @@ function App() {
     };
 
     const saveGame = async (silent = false) => {
-        await fetch(`/api/save/${activeSlot}?deviceId=${deviceIdRef.current}`, {
+        await fetch(`${API_BASE}/api/save/${activeSlot}?deviceId=${deviceIdRef.current}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
@@ -425,13 +426,13 @@ function App() {
     };
 
     const handleDeleteSave = async (slotId: number) => {
-        await fetch(`/api/save/${slotId}?deviceId=${deviceIdRef.current}`, { method: 'DELETE' });
-        const res = await fetch(`/api/save?deviceId=${deviceIdRef.current}`);
+        await fetch(`${API_BASE}/api/save/${slotId}?deviceId=${deviceIdRef.current}`, { method: 'DELETE' });
+        const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
         setSaveSlots(res.ok ? await res.json() : []);
     };
 
     const goToTitle = async () => {
-        const res = await fetch(`/api/save?deviceId=${deviceIdRef.current}`);
+        const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
         const data = res.ok ? await res.json() : [];
         setSaveSlots(Array.isArray(data) ? data : []);
         setShowEnding(false);
@@ -448,17 +449,17 @@ function App() {
     };
 
     const handleCopySave = async (fromId: number, toId: number) => {
-        const res = await fetch(`/api/save/${fromId}?deviceId=${deviceIdRef.current}`);
+        const res = await fetch(`${API_BASE}/api/save/${fromId}?deviceId=${deviceIdRef.current}`);
         if (res.ok) {
             const data = await res.json();
             data.id = null;
             data.slotId = toId;
-            await fetch(`/api/save/${toId}?deviceId=${deviceIdRef.current}`, {
+            await fetch(`${API_BASE}/api/save/${toId}?deviceId=${deviceIdRef.current}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data),
             });
-            const listRes = await fetch(`/api/save?deviceId=${deviceIdRef.current}`);
+            const listRes = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
             setSaveSlots(listRes.ok ? await listRes.json() : []);
         }
     };
@@ -604,7 +605,7 @@ function App() {
                 return;
             }
 
-            const response = await fetch("/api/move", {
+            const response = await fetch(`${API_BASE}/api/move`, {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({ roomID, direction, requirementsMet })
@@ -859,7 +860,7 @@ function App() {
 
     useEffect(() => {
         const checkSaves = async () => {
-            const res = await fetch(`/api/save?deviceId=${deviceIdRef.current}`);
+            const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
             if (!res.ok) { setPhase('intro'); return; }
             const data = await res.json();
             const saves = Array.isArray(data) ? data : [];
