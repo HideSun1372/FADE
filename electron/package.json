@@ -8,8 +8,8 @@
     "dist": "electron-builder --win"
   },
   "devDependencies": {
-    "electron": "^33.0.0",
-    "electron-builder": "^25.1.8"
+    "electron": "^42.3.3",
+    "electron-builder": "^26.15.0"
   },
   "build": {
     "appId": "com.hidesun1372.fade",
@@ -29,9 +29,6 @@
     },
     "files": [
       "main.js",
-      "loading.html",
-      "mus_start.mp3",
-      "mus_startlong.mp3",
       "!dist/**"
     ]
   }

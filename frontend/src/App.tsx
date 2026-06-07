@@ -11,6 +11,7 @@ import Intro from './Intro'
 import UploadMusic from './UploadMusic'
 import { loadAllAudioBlobs } from './audioStorage'
 import { API_BASE } from './config'
+import LoadingScreen from './LoadingScreen'
 
 const SPEED = 0.45;
 const ENEMY_SPEED = 0.3;
@@ -98,6 +99,7 @@ function App() {
     const [unsavedChanges, setUnsavedChanges] = useState(false);
     const [returnConfirm, setReturnConfirm] = useState(false);
     const [saveMenuCursor, setSaveMenuCursor] = useState(0);
+    const [backendReady, setBackendReady] = useState(!API_BASE);
 
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
@@ -859,6 +861,17 @@ function App() {
     }, [isBattling]);
 
     useEffect(() => {
+        if (!API_BASE) return;
+        const poll = () => {
+            fetch(`${API_BASE}/api/start`)
+                .then(res => { if (res.ok) setBackendReady(true); else setTimeout(poll, 2000); })
+                .catch(() => setTimeout(poll, 2000));
+        };
+        poll();
+    }, []);
+
+    useEffect(() => {
+        if (!backendReady) return;
         const checkSaves = async () => {
             const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
             if (!res.ok) { setPhase('intro'); return; }
@@ -872,7 +885,7 @@ function App() {
             }
         };
         checkSaves();
-    }, []);
+    }, [backendReady]);
 
     useEffect(() => {
         loadAllAudioBlobs().then(setCustomAudio).catch(() => {});
@@ -1159,6 +1172,8 @@ function App() {
             visitedCount: save.visited ? (save.visited as string).split(',').filter(Boolean).length : 0,
         };
     });
+
+    if (!backendReady) return <LoadingScreen />;
 
     if (phase === 'loading') return null;
 

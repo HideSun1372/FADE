@@ -1,18 +1,19 @@
+# syntax=docker/dockerfile:1
 FROM node:20-slim AS frontend-builder
 WORKDIR /frontend
 COPY frontend/package*.json ./
-RUN npm ci
+RUN --mount=type=cache,target=/root/.npm npm ci
 COPY frontend/ ./
 RUN npx vite build --outDir ./dist
 
 FROM eclipse-temurin:17-jdk AS backend-builder
 WORKDIR /backend
 COPY backend/gradle/ gradle/
-COPY backend/gradlew backend/build.gradle.kts backend/settings.gradle.kts ./
-RUN chmod +x gradlew && ./gradlew dependencies --no-daemon
+COPY backend/gradlew backend/build.gradle.kts backend/settings.gradle.kts backend/gradle.properties ./
+RUN --mount=type=cache,target=/root/.gradle chmod +x gradlew && ./gradlew dependencies --no-daemon
 COPY backend/src/ src/
 COPY --from=frontend-builder /frontend/dist/ src/main/resources/static/
-RUN ./gradlew bootJar -x test --no-daemon
+RUN --mount=type=cache,target=/root/.gradle ./gradlew bootJar -x test --no-daemon
 
 FROM eclipse-temurin:17-jre
 WORKDIR /app
