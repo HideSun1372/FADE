@@ -152,7 +152,7 @@ function App() {
     showEndingButtonRef.current = showEndingButton;
     const saveMenuCursorRef = useRef(0);
     saveMenuCursorRef.current = saveMenuCursor;
-    const phaseRef = useRef<'loading' | 'title' | 'intro' | 'game' | 'credits'>('loading');
+    const phaseRef = useRef<'loading' | 'title' | 'intro' | 'game' | 'credits' | 'upload_music'>('loading');
     phaseRef.current = phase;
     const room62NorthUnlockShownRef = useRef(false);
     const hasRoom62KeyRef = useRef(false);
