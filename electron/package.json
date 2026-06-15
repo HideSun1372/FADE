@@ -5,7 +5,8 @@
   "main": "main.js",
   "scripts": {
     "start": "electron .",
-    "dist": "electron-builder --win"
+    "dist": "electron-builder --win",
+    "dist:mac": "electron-builder --mac"
   },
   "devDependencies": {
     "electron": "^42.3.3",
@@ -20,6 +21,10 @@
     "win": {
       "target": "nsis",
       "icon": "favicon.ico"
+    },
+    "mac": {
+      "target": "dmg",
+      "icon": "favicon.icns"
     },
     "nsis": {
       "oneClick": false,
