@@ -36,10 +36,6 @@ FADE/
 ├── frontend/       # React/TypeScript game client (Vite)
 ├── backend/        # Spring Boot REST API (Gradle)
 └── electron/       # Desktop wrapper and packaging config
-    └── resources/
-        ├── app.jar         # Compiled backend JAR
-        ├── jre/            # Bundled Java Runtime
-        └── config.json     # Database connection config
 ```
 
 ---
