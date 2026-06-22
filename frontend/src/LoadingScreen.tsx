@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
+const isDesktop = navigator.userAgent.includes('Electron');
+
 export default function LoadingScreen() {
     const [elapsed, setElapsed] = useState(0);
     const [showError, setShowError] = useState(false);
@@ -7,14 +9,14 @@ export default function LoadingScreen() {
 
     useEffect(() => {
         intervalRef.current = setInterval(() => setElapsed(e => e + 500), 500);
-        const t = setTimeout(() => setShowError(true), 180000);
+        const t = setTimeout(() => setShowError(true), isDesktop ? 20_000 : 180_000);
         return () => {
             if (intervalRef.current) clearInterval(intervalRef.current);
             clearTimeout(t);
         };
     }, []);
 
-    const progress = Math.min((elapsed / 120_000) * 90, 90);
+    const progress = Math.min((elapsed / (isDesktop ? 10_000 : 120_000)) * 90, 90);
 
     return (
         <div style={{
@@ -46,11 +48,11 @@ export default function LoadingScreen() {
                 {Math.floor(elapsed / 1000)}s
             </p>
             <p style={{ fontSize: '12px', opacity: 0.5, maxWidth: '320px', textAlign: 'center', lineHeight: '1.6' }}>
-                The server sleeps after inactivity. It should wake within 2 minutes.
+                {isDesktop ? 'Starting local server...' : 'The server sleeps after inactivity. It should wake within 2 minutes.'}
             </p>
             {showError && (
                 <p style={{ fontSize: '12px', opacity: 0.45, marginTop: '20px', maxWidth: '320px', textAlign: 'center' }}>
-                    The connection fades. Are you connected to the internet?
+                    {isDesktop ? 'The local server failed to start.' : 'The connection fades. Are you connected to the internet?'}
                 </p>
             )}
         </div>

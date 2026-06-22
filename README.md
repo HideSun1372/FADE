@@ -20,7 +20,7 @@ A narrative-driven dungeon crawler with a twist. You play as a character slowly 
 | Layer | Technology |
 |---|---|
 | Frontend | React 19, TypeScript, Vite |
-| Backend | Java 17, Spring Boot, Spring Data JPA |
+| Backend | Java 25, Spring Boot, Spring Data JPA |
 | Database | PostgreSQL |
 | Desktop | Electron 33 |
 | Packaging | Electron Builder (Windows NSIS installer) |
@@ -49,7 +49,7 @@ FADE/
 ### Prerequisites
 
 - Node.js 18+
-- Java 17+
+- Java 25+
 - PostgreSQL (running locally)
 
 ### 1. Backend
