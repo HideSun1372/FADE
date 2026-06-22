@@ -34,6 +34,7 @@
     },
     "files": [
       "main.js",
+      "loading.html",
       "!dist/**"
     ],
     "extraResources": [

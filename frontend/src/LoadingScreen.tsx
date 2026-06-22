@@ -1,6 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-
-const isDesktop = navigator.userAgent.includes('Electron');
+import { isDesktop } from './config';
 
 export default function LoadingScreen() {
     const [elapsed, setElapsed] = useState(0);

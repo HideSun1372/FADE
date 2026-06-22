@@ -10,7 +10,7 @@ import Credits from './Credits'
 import Intro from './Intro'
 import UploadMusic from './UploadMusic'
 import { loadAllAudioBlobs } from './audioStorage'
-import { API_BASE } from './config'
+import { API_BASE, isDesktop } from './config'
 import LoadingScreen from './LoadingScreen'
 
 const SPEED = 0.45;
@@ -99,7 +99,7 @@ function App() {
     const [unsavedChanges, setUnsavedChanges] = useState(false);
     const [returnConfirm, setReturnConfirm] = useState(false);
     const [saveMenuCursor, setSaveMenuCursor] = useState(0);
-    const [backendReady, setBackendReady] = useState(!API_BASE);
+    const [backendReady, setBackendReady] = useState(!API_BASE && !isDesktop);
 
     const requirementsMet = roomID === 0 ? northDoorUnlocked : clearedRooms.has(roomID);
 
@@ -861,11 +861,11 @@ function App() {
     }, [isBattling]);
 
     useEffect(() => {
-        if (!API_BASE) return;
+        if (!API_BASE && !isDesktop) return;
         const poll = () => {
             fetch(`${API_BASE}/api/start`)
                 .then(res => { if (res.ok) setBackendReady(true); else setTimeout(poll, 2000); })
-                .catch(() => setTimeout(poll, 2000));
+                .catch(() => setTimeout(poll, isDesktop ? 1000 : 2000));
         };
         poll();
     }, []);
@@ -873,15 +873,19 @@ function App() {
     useEffect(() => {
         if (!backendReady) return;
         const checkSaves = async () => {
-            const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
-            if (!res.ok) { setPhase('intro'); return; }
-            const data = await res.json();
-            const saves = Array.isArray(data) ? data : [];
-            if (saves.length === 0) {
+            try {
+                const res = await fetch(`${API_BASE}/api/save?deviceId=${deviceIdRef.current}`);
+                if (!res.ok) { setPhase('intro'); return; }
+                const data = await res.json();
+                const saves = Array.isArray(data) ? data : [];
+                if (saves.length === 0) {
+                    setPhase('intro');
+                } else {
+                    setSaveSlots(saves);
+                    setPhase('title');
+                }
+            } catch {
                 setPhase('intro');
-            } else {
-                setSaveSlots(saves);
-                setPhase('title');
             }
         };
         checkSaves();

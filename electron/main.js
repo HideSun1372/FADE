@@ -49,6 +49,8 @@ app.whenReady().then(async () => {
         },
     });
 
+    mainWindow.loadFile(path.join(__dirname, 'loading.html'));
+
     await waitForBackend();
     mainWindow.loadURL('http://localhost:8080');
 
